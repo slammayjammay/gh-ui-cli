@@ -19,6 +19,15 @@ class Fetcher {
 
 		return fetch(url, options);
 	}
+
+	async searchRepos(query, debug = false) {
+		const encoded = encodeURIComponent(query);
+		if (debug) {
+			return require('./seeds/repo-search');
+		}
+
+		return this.fetch(`https://api.github.com/search/repositories?q=${encoded}`);
+	}
 };
 
 module.exports = new Fetcher('slammayjammy', process.env.GH_TOKEN);
