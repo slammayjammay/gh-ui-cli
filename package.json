@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "chalk": "^4.1.0",
+    "node-fetch": "^2.6.1",
+    "readline-refresh-line": "github:slammayjammay/readline-refresh-line",
+    "terminal-jumper": "github:slammayjammay/terminal-jumper"
+  }
+}
