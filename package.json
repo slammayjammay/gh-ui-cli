@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "ansi-escapes": "^4.3.2",
     "chalk": "^4.1.0",
     "node-fetch": "^2.6.1",
     "readline-refresh-line": "github:slammayjammay/readline-refresh-line",

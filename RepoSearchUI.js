@@ -1,13 +1,22 @@
-const chalk = require('chalk');
+const escapes = require('ansi-escapes');
+const pad = require('./pad');
 const vats = require('./vats');
 const fetcher = require('./fetcher');
 const ViStateDiv = require('./ViStateDiv');
+
+const PROMPT = 'Enter a repo name > ';
 
 module.exports = class RepoSearchUI {
 	constructor(jumper) {
 		this.jumper = jumper;
 
+		this.onKeypress = this.onKeypress.bind(this);
 		this.onStateChange = this.onStateChange.bind(this);
+
+		this._resolve = null;
+
+		this.jumper.addDivision({ id: 'input', top: 0, left: 0, width: '100%' });
+		this.jumper.getDivision('input').addBlock(PROMPT);
 
 		const resultsDiv = this.jumper.addDivision({
 			id: 'results',
@@ -18,62 +27,89 @@ module.exports = class RepoSearchUI {
 		});
 
 		this.resultsDiv = new ViStateDiv(resultsDiv);
-		vats.options.getViState = () => this.resultsDiv.state;
+
+		vats.on('keypress', this.onKeypress);
 		vats.on('state-change', this.onStateChange);
 	}
 
-	async go() {
-		this.jumper.jumpTo(0, 0);
-		const input = await vats.prompt({ prompt: 'Enter a repo name > ' });
+	getState() {
+		return this.resultsDiv.state;
+	}
 
-		if (input) {
-			const json = await fetcher.searchRepos(input, true);
+	async run() {
+		const query = await this.promptForSearchQuery();
+		if (!query) {
+			return '';
+		}
 
-			json.items.forEach(item => {
-				const padded = this.pad(item.full_name, this.resultsDiv.div.width());
-				this.resultsDiv.addBlock(padded);
-			});
+		const json = await fetcher.searchRepos(query, true);
 
-			this.resultsDiv.sync();
+		json.items.forEach(item => {
+			const padded = pad(item.full_name, this.resultsDiv.div.width());
+			this.resultsDiv.addBlock(padded);
+		});
 
-			process.stdout.write(
-				this.resultsDiv.div.renderString() +
-				this.jumper.jumpToString(`0`, `{results}t`)
-			);
+		this.resultsDiv.sync();
 
-			vats.emitEvent('state-change');
-		} else {
-			process.exit();
+		process.stdout.write(
+			this.jumper.renderString() +
+			this.jumper.jumpToString(`0`, `{results}t`)
+		);
+
+		vats.emitEvent('state-change');
+
+		return new Promise(resolve => this._resolve = resolve);
+	}
+
+	async promptForSearchQuery() {
+		const eraseString = this.resultsDiv.div.eraseString();
+
+		this.resultsDiv.div.reset();
+
+		process.stdout.write(
+			this.jumper.renderString() +
+			this.jumper.jumpToString(0, 0)
+		);
+
+		process.stdout.write(escapes.cursorShow);
+		const query = await vats.prompt({ prompt: PROMPT });
+		process.stdout.write(escapes.cursorHide);
+		return query;
+	}
+
+	onKeypress({ key }) {
+		if (key.formatted === 'escape') {
+			this.promptForSearchQuery();
+		} else if (key.formatted === 'return') {
+			const repo = this.resultsDiv.getSelectedBlock().escapedText;
+			this.jumper.getDivision('input').reset();
+			this.resultsDiv.div.reset();
+			this.jumper.chain().render().jumpTo(0, 0).execute();
+			this.end(repo.trim());
 		}
 	}
 
 	onStateChange({ previousState }) {
-		this.resultsDiv.updateState();
+		this.resultsDiv.onStateChange(previousState);
 
-		// un-highlight old
-		if (previousState && previousState.cursorY !== this.resultsDiv.state.cursorY) {
-			const block = this.resultsDiv.getBlockAtIdx(previousState.cursorY);
-			block.content(block.escapedText);
-		}
-
-		// highlight selected
-		const block = this.resultsDiv.getBlockAtIdx(this.resultsDiv.state.cursorY);
-		block.content(chalk.bgGreen.black(block.escapedText));
-
-		const cursorIdx = this.resultsDiv.state.cursorY - this.resultsDiv.state.scrollY;
+		const cursorIdx = this.getState().cursorY;
 		process.stdout.write(
-			this.resultsDiv.div.eraseString() +
-			this.resultsDiv.div.renderString() +
-			this.jumper.jumpToString(`0`, `{results}t + ${cursorIdx}`)
+			this.jumper.renderString() +
+			this.jumper.jumpToBlockString(`results.block-${cursorIdx}`, 0, 0)
 		);
 	}
 
-	pad(string, maxWidth) {
-		const diff = maxWidth - string.length;
-		if (diff <= 0) {
-			return string;
-		}
+	end(data) {
+		this._resolve(data);
+		this.jumper.erase();
+		this.destroy();
+	}
 
-		return `${string}${new Array(diff).fill(' ').join('')}`;
+	destroy() {
+		vats.removeListener('keypress', this.onKeypress);
+		vats.removeListener('state-change', this.onStateChange);
+
+		this.resultsDiv.destroy();
+		this.jumper = this.resultsDiv = this._resolve = null;
 	}
 };

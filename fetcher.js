@@ -14,7 +14,7 @@ class Fetcher {
 
 	fetch(url, options = {}, useAuth = true) {
 		if (useAuth) {
-			options.Authorization = this.auth;
+			options.headers = { Authorization: this.auth };
 		}
 
 		return fetch(url, options);
@@ -27,6 +27,14 @@ class Fetcher {
 		}
 
 		return this.fetch(`https://api.github.com/search/repositories?q=${encoded}`);
+	}
+
+	getRepo(repoName) {
+		return this.fetch(`https://api.github.com/repos/${repoName}`);
+	}
+
+	getFile(repoName, filePath) {
+		return this.fetch(`https://api.github.com/repos/${repoName}/contents/${filePath}`);
 	}
 };
 

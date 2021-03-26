@@ -1,5 +1,6 @@
 module.exports = {
 	items: [
+		{ full_name: 'slammayjammay/dotfiles' },
 		{ full_name: 'vim/vim' },
 		{ full_name: 'ma6174/vim' },
 		{ full_name: 'VSCodeVim/Vim' },
