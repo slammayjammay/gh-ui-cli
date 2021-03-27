@@ -1,7 +1,7 @@
-require('./dotenv')();
+require('../dotenv')();
 const escapes = require('ansi-escapes');
 require('readline-refresh-line/hijack');
-const Jumper = require('../terminal-jumper/src');
+const Jumper = require('../../terminal-jumper/src');
 const fetcher = require('./fetcher');
 const vats = require('./vats');
 const RepoSearchUI = require('./RepoSearchUI');

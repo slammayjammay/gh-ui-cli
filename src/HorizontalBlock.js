@@ -1,5 +1,5 @@
 const stringWidth = require('string-width');
-const TextBlock = require('../terminal-jumper/src/TextBlock');
+const TextBlock = require('../../terminal-jumper/src/TextBlock');
 const ViStateDiv = require('./ViStateDiv');
 const chalk = require('chalk');
 const vats = require('./vats');
