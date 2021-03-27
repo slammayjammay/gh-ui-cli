@@ -35,7 +35,7 @@ module.exports = class ViStateDiv {
 	sync() {
 		this.state.windowWidth = this.div.width() - 1;
 		this.state.windowHeight = this.div.height() - 1;
-		// this.state.documentWidth = 'todo';
+		this.state.documentWidth = 1;
 		this.state.documentHeight = this.div.blockIds.slice(0, -1).reduce((accum, id) => {
 			return accum + this.div.getBlock(id).height();
 		}, 0);
@@ -43,7 +43,6 @@ module.exports = class ViStateDiv {
 		vats.viStateHandler.clampState(this.state);
 	}
 
-	// TODO: rename onStateChange
 	onStateChange(previousState) {
 		// un-highlight old
 		if (previousState && previousState.cursorY !== this.state.cursorY) {
@@ -71,7 +70,7 @@ module.exports = class ViStateDiv {
 	}
 
 	calculateIdxFromState(state, previousState) {
-		const diffY = this.state.cursorY - previousState.cursorY;
+		const diffY = state.cursorY - previousState.cursorY;
 		const isBackward = diffY < 0;
 
 		let i = 0;

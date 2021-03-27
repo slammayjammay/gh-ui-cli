@@ -1,7 +1,9 @@
+const chalk = require('chalk');
 const pad = require('./pad');
 const vats = require('./vats');
 const fetcher = require('./fetcher');
 const ViStateDiv = require('./ViStateDiv');
+const HorizontalBlock = require('./HorizontalBlock');
 
 module.exports = class RepoUI {
 	constructor(jumper, repoName) {
@@ -12,23 +14,23 @@ module.exports = class RepoUI {
 		this.onKeybinding = this.onKeybinding.bind(this);
 		this.onStateChange = this.onStateChange.bind(this);
 
-		this.jumper.addDivision({ id: 'repo-name', top: 0, left: 0, width: '100%' });
+		this.jumper.addDivision({ id: 'repo-name', top: 0, left: 1, width: '100% - 1' });
 		this.jumper.getDivision('repo-name').addBlock(this.repoName + '\n');
 
 		const actionsDiv = this.jumper.addDivision({
 			id: 'repo-actions',
 			top: '{repo-name}b',
 			left: 0,
-			width: 'min(30, 30%)'
+			width: '100%'
 		});
 
-		this.actionsDiv = new ViStateDiv(actionsDiv);
+		this.actionsDiv = new HorizontalBlock(actionsDiv);
 		this.currentDiv = this.actionsDiv;
 
 		const actions = ['readme', 'files', 'branches', 'commits', 'issues', 'releases'];
 		actions.forEach(action => {
 			const width = this.actionsDiv.div.width();
-			const block = this.actionsDiv.addBlock(pad(action, width));
+			const block = this.actionsDiv.addBlock(` ${action} `);
 			block.name = action;
 		});
 
@@ -70,15 +72,22 @@ module.exports = class RepoUI {
 	}
 
 	onKeybinding({ kb }) {
+		const isHorizontal = ['cursor-left', 'cursor-right'].includes(kb.action.name);
 		const isVertical = ['cursor-up', 'cursor-down'].includes(kb.action.name);
+
 		if (this.currentDiv === this.commitsDiv && isVertical) {
 			this.currentDiv.adjustKbForMultiLine(kb);
+		} else if (this.currentDiv === this.actionsDiv && isHorizontal) {
+			this.currentDiv.adjustKbForHorizontal(kb);
 		}
 	}
 
 	onActionsKeypress({ key }) {
 		if (key.formatted === 'return') {
 			const block = this.currentDiv.getSelectedBlock();
+			block.content(chalk.bgGray.bold.hex('000')(block.escapedText));
+			this.currentDiv.setContent();
+
 			if (block.name === 'branches') {
 				this.showBranches();
 			} else if (block.name === 'commits') {
@@ -92,14 +101,14 @@ module.exports = class RepoUI {
 
 		const cursorIdx = this.currentDiv.currentIdx;
 		const id = this.currentDiv.div.options.id;
-		process.stdout.write(this.jumper.renderString());
+		this.jumper.render();
 	}
 
 	async showBranches() {
 		this.branchesDiv = new ViStateDiv(this.jumper.addDivision({
 			id: 'repo-branches',
-			top: '{repo-name}b',
-			left: '{repo-actions}r + 1',
+			top: '{repo-actions}b + 1',
+			left: '0',
 			width: '100% - {repo-branches}l'
 		}));
 		this.currentDiv = this.branchesDiv;
@@ -117,8 +126,8 @@ module.exports = class RepoUI {
 	async showCommits() {
 		this.commitsDiv = new ViStateDiv(this.jumper.addDivision({
 			id: 'repo-commits',
-			top: '{repo-name}b',
-			left: '{repo-actions}r + 1',
+			top: '{repo-actions}b + 1',
+			left: '0',
 			width: '100% - {repo-commits}l'
 		}));
 		this.currentDiv = this.commitsDiv;
