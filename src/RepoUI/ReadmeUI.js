@@ -4,14 +4,15 @@ const fetcher = require('../fetcher');
 const BaseUI = require('../BaseUI');
 
 module.exports = class ReadmeUI extends BaseUI {
-	constructor(jumper, divOptions, repoName) {
+	constructor(jumper, divOptions, repoData) {
 		super(jumper);
-		this.repoName = repoName;
+		this.repoData = repoData;
 
 		this.div = this.jumper.addDivision({
 			scrollBarY: { foreground: chalk.bgWhite(' '), background: ' ' },
 			...divOptions,
 			left: `${divOptions.left} + 1`,
+			top: `${divOptions.top} + 1`,
 			width: `min(100%, 80) - 1`,
 			height: `min({${divOptions.id}}nh, 100% - {${divOptions.id}}t - 1)`
 		});
@@ -22,7 +23,7 @@ module.exports = class ReadmeUI extends BaseUI {
 	}
 
 	async run() {
-		this.data = await (await fetcher.getFile(this.repoName, 'README.md')).json();
+		this.data = await (await fetcher.getFile(this.repoData.full_name, 'README.md')).json();
 
 		const text = Buffer.from(this.data.content, this.data.encoding).toString();
 		this.div.addBlock(text, 'readme');
