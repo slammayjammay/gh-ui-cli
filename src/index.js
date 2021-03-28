@@ -18,6 +18,9 @@ class Program {
 			// this.jumper.rmcup();
 		});
 
+		vats.on('command-mode:enter', () => process.stdout.write(escapes.cursorShow));
+		vats.on('command-mode:exit', () => process.stdout.write(escapes.cursorHide));
+
 		this.run();
 	}
 

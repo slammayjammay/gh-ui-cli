@@ -1,3 +1,4 @@
+const chalk = require('chalk');
 const fetcher = require('../fetcher');
 const vats = require('../vats');
 const pad = require('../pad');
@@ -10,13 +11,15 @@ module.exports = class CommitsUI extends ViStateUI {
 	}
 
 	async run() {
-		const url = this.repoData.commits_url.replace('{/sha}', '');
-		const commits = await (await fetcher.fetch(url)).json();
+		const url = this.repoData.issues_url.replace('{/number}', '');
+		const issues = await (await fetcher.fetch(url)).json();
 
-		commits.forEach(({ commit }) => {
+		// TODO: dates
+		issues.forEach(issue => {
 			const width = this.div.width();
-			const lines = [commit.message, commit.author.name, commit.author.date].join('\n');
-			const text = lines.split('\n').map(line => pad(line, width)).join('\n');
+			const lines = [issue.title];
+			lines.push(`#${issue.number}, (${issue.state})`);
+			const text = lines.join('\n').split('\n').map(line => pad(line, width)).join('\n');
 			this.div.addBlock(text + '\n');
 		});
 

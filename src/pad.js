@@ -1,5 +1,7 @@
+const stringWidth = require('string-width');
+
 module.exports = (string, maxWidth) => {
-	const diff = maxWidth - string.length;
+	const diff = maxWidth - stringWidth(string);
 	if (diff <= 0) {
 		return string;
 	}
