@@ -1,13 +1,14 @@
 const stringWidth = require('string-width');
 const TextBlock = require('../../terminal-jumper/src/TextBlock');
-const ViStateDiv = require('./ViStateDiv');
+const ViStateUI = require('./ViStateUI');
 const chalk = require('chalk');
 const vats = require('./vats');
 
 // hack because TerminalJumper doesn't allow horizontal blocks
-module.exports = class HorizontalBlock extends ViStateDiv {
+module.exports = class HorizontalBlock extends ViStateUI {
 	constructor() {
 		super(...arguments);
+
 		this.blocks = [];
 		this.block = this.div.addBlock('', 'block');
 	}
@@ -38,7 +39,13 @@ module.exports = class HorizontalBlock extends ViStateDiv {
 		vats.viStateHandler.clampState(this.state);
 	}
 
-	onStateChange(previousState) {
+	onKeybinding({ kb }) {
+		if (['cursor-left', 'cursor-right'].includes(kb.action.name)) {
+			this.adjustKbForHorizontal(kb);
+		}
+	}
+
+	onStateChange({ previousState }) {
 		// un-highlight old
 		if (previousState && previousState.cursorX !== this.state.cursorX) {
 			this.getSelectedBlock().content(this.getSelectedBlock().escapedText);
@@ -50,10 +57,7 @@ module.exports = class HorizontalBlock extends ViStateDiv {
 		block.content(chalk.bgGreen.bold.hex('000')(block.escapedText));
 		this.setContent();
 
-		// this.div.scroll(this.state.scrollX, this.state.scrollY);
-		// if (this.state.cursorY - this.state.scrollY + block.height() > this.state.windowHeight) {
-		// 	this.div.scrollY(this.state.scrollY + block.height() - 1);
-		// }
+		this.jumper.render();
 	}
 
 	adjustKbForHorizontal(kb) {

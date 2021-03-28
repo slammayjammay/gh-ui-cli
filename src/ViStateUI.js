@@ -1,9 +1,12 @@
 const chalk = require('chalk');
 const vats = require('./vats');
+const BaseUI = require('./BaseUI');
 
-module.exports = class ViStateDiv {
-	constructor(div) {
-		this.div = div;
+module.exports = class ViStateUI extends BaseUI {
+	constructor(jumper, divOptions) {
+		super(jumper);
+
+		this.div = this.jumper.addDivision(divOptions);
 
 		this.state = {
 			windowWidth: 1,
@@ -17,6 +20,13 @@ module.exports = class ViStateDiv {
 		};
 
 		this.currentIdx = 0;
+
+		this.addVatsListener('keybinding', 'onKeybinding');
+		this.addVatsListener('state-change', 'onStateChange');
+	}
+
+	getState() {
+		return this.state;
 	}
 
 	addBlock(text, id, idx) {
@@ -43,7 +53,13 @@ module.exports = class ViStateDiv {
 		vats.viStateHandler.clampState(this.state);
 	}
 
-	onStateChange(previousState) {
+	onKeybinding({ kb }) {
+		if (['cursor-up', 'cursor-down'].includes(kb.action.name)) {
+			this.adjustKbForMultiLine(kb);
+		}
+	}
+
+	onStateChange({ previousState }) {
 		// un-highlight old
 		if (previousState && previousState.cursorY !== this.state.cursorY) {
 			const block = this.getSelectedBlock();
@@ -59,6 +75,8 @@ module.exports = class ViStateDiv {
 		if (this.state.cursorY - this.state.scrollY + block.height() > this.state.windowHeight) {
 			this.div.scrollY(this.state.scrollY + block.height() - 1);
 		}
+
+		this.jumper.render();
 	}
 
 	adjustKbForMultiLine(kb) {
@@ -94,8 +112,10 @@ module.exports = class ViStateDiv {
 	}
 
 	destroy() {
-		this.div.jumper.removeDivision(this.div);
+		this.jumper.removeDivision(this.div);
 		this.div.destroy();
 		this.div = this.viState = this.currentIdx = null;
+
+		super.destroy();
 	}
 };

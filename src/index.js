@@ -23,11 +23,12 @@ class Program {
 
 	async run() {
 		const repoSearchUI = new RepoSearchUI(this.jumper);
-		vats.options.getViState = () => repoSearchUI.getState();
+		repoSearchUI.focus();
 		const repoName = await repoSearchUI.run();
+		// repoSearchUI.destroy();
 
 		const repoUI = new RepoUI(this.jumper, repoName);
-		vats.options.getViState = () => repoUI.getState();
+		repoUI.focus();
 		repoUI.run();
 	}
 }
