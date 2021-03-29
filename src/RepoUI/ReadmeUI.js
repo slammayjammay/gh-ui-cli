@@ -60,15 +60,29 @@ module.exports = class ReadmeUI extends BaseUI {
 	}
 
 	onKeybinding({ kb }) {
-		if (/cursor-(up|down)/.test(kb.action.name)) {
-			const dir = kb.action.name.includes('down') ? 1 : -1;
+		const { name } = kb.action;
+
+		let needsRender = true;
+
+		if (/cursor-(up|down)/.test(name)) {
+			const dir = name.includes('down') ? 1 : -1;
 			this.div.scrollDown(dir * kb.count);
-			this.jumper.render();
-		} else if (/cursor-(left|right)/.test(kb.action.name)) {
-			const dir = kb.action.name.includes('right') ? 1 : -1;
+		} else if (/cursor-(left|right)/.test(name)) {
+			const dir = name.includes('right') ? 1 : -1;
 			this.div.scrollRight(dir * kb.count);
-			this.jumper.render();
+		} else if (/cursor-to-document-(left|right)/.test(name)) {
+			this.div.scrollX(name.includes('right') ? this.div.width() : 0);
+		} else if (/cursor-to-document-(top|bottom)/.test(name)) {
+			this.div.scrollY(name.includes('bottom') ? this.div.naturalHeight() : 0);
+		} else if (/scroll-(full|half)-window-(up|down)/.test(name)) {
+			const dir = name.includes('down') ? 1 : -1;
+			const mag = name.includes('full') ? 1 : 0.5;
+			this.div.scrollDown(dir * mag * this.div.height());
+		} else {
+			needsRender = false;
 		}
+
+		needsRender && this.jumper.render();
 	}
 
 	end() {
