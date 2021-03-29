@@ -23,7 +23,7 @@ module.exports = class RepoUI extends BaseUI {
 		this.div = new HorizontalBlock(this.jumper, {
 			id: 'repo-actions',
 			top: '{repo-name}b',
-			left: 0,
+			left: 1,
 			width: '100%'
 		});
 		this.div.focus();
@@ -55,6 +55,7 @@ module.exports = class RepoUI extends BaseUI {
 
 			const View = uiEndOnEscape({
 				readme: ReadmeUI,
+				// files: FilesUI,
 				branches: BranchesUI,
 				commits: CommitsUI,
 				issues: IssuesUI,
@@ -65,7 +66,7 @@ module.exports = class RepoUI extends BaseUI {
 				id: `repo-${block.name}`,
 				top: '{repo-actions}b + 1',
 				left: '{repo-actions}l',
-				width: '100% - {repo-actions}l'
+				width: `100% - {repo-${block.name}}l`
 			}, this.repoData);
 
 			block.content(chalk.bgGray.bold.hex('000')(block.escapedText));

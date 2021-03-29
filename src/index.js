@@ -28,7 +28,6 @@ class Program {
 		const repoSearchUI = new RepoSearchUI(this.jumper);
 		repoSearchUI.focus();
 		const repoName = await repoSearchUI.run();
-		// repoSearchUI.destroy();
 
 		const repoUI = new RepoUI(this.jumper, repoName);
 		repoUI.focus();

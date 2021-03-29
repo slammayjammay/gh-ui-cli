@@ -34,28 +34,19 @@ module.exports = class RepoSearchUI extends BaseUI {
 	}
 
 	async run() {
-		const query = await this.promptForSearchQuery();
-		if (!query) {
-			return '';
-		}
+		this.promptForSearchQuery().then(query => this.fetchRepos(query));
+		return super.run();
+	}
 
+	async fetchRepos(query) {
 		const json = await fetcher.searchRepos(query, true);
 
 		json.items.forEach(item => {
 			const padded = pad(item.full_name, this.resultsUI.div.width());
 			this.resultsUI.addBlock(padded);
 		});
-
 		this.resultsUI.sync();
-
-		process.stdout.write(
-			this.jumper.renderString() +
-			this.jumper.jumpToString(`0`, `{results}t`)
-		);
-
 		vats.emitEvent('state-change');
-
-		return super.run();
 	}
 
 	async promptForSearchQuery() {
@@ -68,16 +59,19 @@ module.exports = class RepoSearchUI extends BaseUI {
 			this.jumper.jumpToString(0, 0)
 		);
 
-		process.stdout.write(escapes.cursorShow);
-		const query = await vats.prompt({ prompt: PROMPT });
-		process.stdout.write(escapes.cursorHide);
+		let query;
+		while (!query) {
+			process.stdout.write(escapes.cursorShow);
+			query = await vats.prompt({ prompt: PROMPT });
+			process.stdout.write(escapes.cursorHide);
+		}
+
 		return query;
 	}
 
 	onKeypress({ key }) {
 		if (key.formatted === 'escape') {
-			// TODO
-			// this.promptForSearchQuery();
+			this.promptForSearchQuery().then(query => this.fetchRepos(query));
 		} else if (key.formatted === 'return') {
 			const repo = this.resultsUI.getSelectedBlock().escapedText;
 			this.jumper.getDivision('input').reset();
