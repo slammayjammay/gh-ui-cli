@@ -1,5 +1,6 @@
 const fetcher = require('../fetcher');
 const vats = require('../vats');
+const pad = require('../pad');
 const ViStateUI = require('../ViStateUI');
 
 module.exports = class BranchesUI extends ViStateUI {
@@ -12,7 +13,7 @@ module.exports = class BranchesUI extends ViStateUI {
 		const url = this.repoData.branches_url.replace('{/branch}', '');
 		const branches = await (await fetcher.fetch(url)).json();
 
-		branches.forEach(({ name }) => this.div.addBlock(name));
+		branches.forEach(({ name }) => this.div.addBlock(pad(name, this.div.width())));
 
 		this.sync();
 		vats.emitEvent('state-change');
