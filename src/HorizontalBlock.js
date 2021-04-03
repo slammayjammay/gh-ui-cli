@@ -1,8 +1,8 @@
 const stringWidth = require('string-width');
 const TextBlock = require('../../terminal-jumper/src/TextBlock');
-const ViStateUI = require('./ViStateUI');
-const chalk = require('chalk');
 const vats = require('./vats');
+const colorscheme = require('./colorscheme');
+const ViStateUI = require('./ViStateUI');
 
 // hack because TerminalJumper doesn't allow horizontal blocks
 module.exports = class HorizontalBlock extends ViStateUI {
@@ -49,13 +49,14 @@ module.exports = class HorizontalBlock extends ViStateUI {
 	onStateChange({ previousState }) {
 		// un-highlight old
 		if (previousState && previousState.cursorX !== this.state.cursorX) {
-			this.getSelectedBlock().content(this.getSelectedBlock().escapedText);
+			const block = this.getSelectedBlock();
+			block.content(colorscheme.colorBlock(block, 'default'));
 			this.currentIdx = this.calculateIdxFromState(this.state, previousState);
 		}
 
 		// highlight selected
 		const block = this.getSelectedBlock();
-		block.content(chalk.bgGreen.bold.hex('000')(block.escapedText));
+		block.content(colorscheme.colorBlock(block, 'highlight'));
 		this.setContent();
 
 		this.jumper.render();

@@ -3,6 +3,7 @@ const chalk = require('chalk');
 const fetcher = require('./fetcher');
 const vats = require('./vats');
 const pad = require('./pad');
+const colorscheme = require('./colorscheme');
 const createFileTree = require('./create-file-tree');
 const BaseUI = require('./BaseUI');
 const ViStateUI = require('./ViStateUI');
@@ -64,12 +65,15 @@ module.exports = class FileTreeUI extends BaseUI {
 		[this.col1, this.col2.div, this.col3].forEach(div => div.reset());
 
 		node.parent && this.getChildren(node.parent).forEach(file => {
-			this.col1.addBlock(basename(file.path));
+			const block = this.col1.addBlock(basename(file.path));
+			block.file = file;
+			block.content(colorscheme.colorBlock(block, 'default'));
 		});
 
 		this.getChildren(node).forEach(file => {
 			const block = this.col2.addBlock(pad(basename(file.path), this.col2.div.width()));
-			block.path = file.path;
+			block.file = file;
+			block.content(colorscheme.colorBlock(block, 'default'));
 		});
 		this.col2.sync();
 
@@ -86,7 +90,7 @@ module.exports = class FileTreeUI extends BaseUI {
 	}
 
 	getSelectedFile() {
-		return this.tree.cache.get(this.col2.getSelectedBlock().path);
+		return this.col2.getSelectedBlock().file;
 	}
 
 	onStateChange({ previousState }) {
@@ -98,7 +102,11 @@ module.exports = class FileTreeUI extends BaseUI {
 		this.col3.reset();
 
 		if (file.type === 'tree') {
-			file.children.forEach(child => this.col3.addBlock(basename(child.path)));
+			this.getChildren(file).forEach(child => {
+				const block = this.col3.addBlock(basename(child.path))
+				block.file = child;
+				block.content(colorscheme.colorBlock(block, 'default'));
+			});
 		} else {
 			this.previewFile(file);
 		}

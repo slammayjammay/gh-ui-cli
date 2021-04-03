@@ -6,6 +6,7 @@ class Tree {
 		files.forEach(obj => this.set(obj.path, obj));
 
 		this.convert();
+		this.cache = null;
 	}
 
 	set(path, file) {

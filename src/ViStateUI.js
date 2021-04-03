@@ -1,5 +1,5 @@
-const chalk = require('chalk');
 const vats = require('./vats');
+const colorscheme = require('./colorscheme');
 const BaseUI = require('./BaseUI');
 
 module.exports = class ViStateUI extends BaseUI {
@@ -68,13 +68,13 @@ module.exports = class ViStateUI extends BaseUI {
 		// un-highlight old
 		if (previousState && previousState.cursorY !== this.state.cursorY) {
 			const block = this.getSelectedBlock();
-			block.content(block.escapedText);
+			block.content(colorscheme.colorBlock(block, 'default'));
 			this.currentIdx = this.calculateIdxFromState(this.state, previousState);
 		}
 
 		// highlight selected
 		const block = this.getSelectedBlock();
-		block.content(chalk.bgGreen.bold.hex('000')(block.escapedText));
+		block.content(colorscheme.colorBlock(block, 'highlight'));
 
 		this.div.scroll(this.state.scrollX, this.state.scrollY);
 		if (this.state.cursorY - this.state.scrollY + block.height() > this.state.windowHeight) {

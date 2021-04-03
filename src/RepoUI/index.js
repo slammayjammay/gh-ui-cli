@@ -1,7 +1,7 @@
-const chalk = require('chalk');
 const pad = require('../pad');
 const vats = require('../vats');
 const fetcher = require('../fetcher');
+const colorscheme = require('../colorscheme');
 const uiEndOnEscape = require('../uiEndOnEscape');
 const BaseUI = require('../BaseUI');
 const ReadmeUI = require('./ReadmeUI');
@@ -70,7 +70,7 @@ module.exports = class RepoUI extends BaseUI {
 				width: `100% - {repo-${block.name}}l`
 			}, this.repoData);
 
-			block.content(chalk.bgGray.bold.hex('000')(block.escapedText));
+			block.content(colorscheme.color(block.escapedText, 'inactive'));
 			this.div.setContent();
 
 			this.unfocus();
