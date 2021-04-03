@@ -51,6 +51,7 @@ module.exports = class ViStateUI extends BaseUI {
 		}, 0);
 
 		vats.viStateHandler.clampState(this.state);
+		this.currentIdx = Math.max(0, Math.min(this.currentIdx, this.state.cursorY))
 	}
 
 	onKeybinding({ kb }) {
@@ -60,11 +61,15 @@ module.exports = class ViStateUI extends BaseUI {
 	}
 
 	onStateChange({ previousState }) {
+		if (previousState && previousState.cursorY === this.state.cursorY) {
+			return;
+		}
+
 		// un-highlight old
 		if (previousState && previousState.cursorY !== this.state.cursorY) {
 			const block = this.getSelectedBlock();
 			block.content(block.escapedText);
-			this.calculateIdxFromState(this.state, previousState);
+			this.currentIdx = this.calculateIdxFromState(this.state, previousState);
 		}
 
 		// highlight selected
@@ -108,7 +113,7 @@ module.exports = class ViStateUI extends BaseUI {
 			return this.div.getBlock(id).height() + accum;
 		}, 0);
 
-		this.currentIdx = targetIdx;
+		return targetIdx;
 	}
 
 	destroy() {

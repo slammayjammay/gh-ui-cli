@@ -39,7 +39,12 @@ module.exports = class RepoSearchUI extends BaseUI {
 	}
 
 	async fetchRepos(query) {
-		const json = await fetcher.searchRepos(query, true);
+		if (!query) {
+			return this.end(false);
+		}
+
+		// const json = await fetcher.searchRepos(query, true);
+		const json = await (await fetcher.searchRepos(query)).json();
 
 		json.items.forEach(item => {
 			const padded = pad(item.full_name, this.resultsUI.div.width());
@@ -59,12 +64,9 @@ module.exports = class RepoSearchUI extends BaseUI {
 			this.jumper.jumpToString(0, 0)
 		);
 
-		let query;
-		while (!query) {
-			process.stdout.write(escapes.cursorShow);
-			query = await vats.prompt({ prompt: PROMPT });
-			process.stdout.write(escapes.cursorHide);
-		}
+		process.stdout.write(escapes.cursorShow);
+		const query = await vats.prompt({ prompt: PROMPT });
+		process.stdout.write(escapes.cursorHide);
 
 		return query;
 	}

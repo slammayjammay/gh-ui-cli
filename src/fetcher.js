@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 
+// TODO: use urls from repoData
 class Fetcher {
 	constructor(username, token) {
 		if (username && token) {
@@ -35,6 +36,14 @@ class Fetcher {
 
 	getFile(repoName, filePath) {
 		return this.fetch(`https://api.github.com/repos/${repoName}/contents/${filePath}`);
+	}
+
+	getFiles(repoName, sha = 'master') {
+		return this.fetch(`https://api.github.com/repos/${repoName}/git/trees/${sha}?recursive=true`);
+	}
+
+	destroy() {
+		this.auth = null;
 	}
 };
 

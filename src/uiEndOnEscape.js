@@ -7,6 +7,8 @@ module.exports = Base => class extends Base {
 	onKeypress({ key }) {
 		if (key.formatted === 'escape') {
 			this.end();
+		} else if (super.onKeypress) {
+			super.onKeypress(...arguments);
 		}
 	}
 };

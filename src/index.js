@@ -29,9 +29,20 @@ class Program {
 		repoSearchUI.focus();
 		const repoName = await repoSearchUI.run();
 
+		if (!repoName) {
+			return this.destroy();
+		}
+
 		const repoUI = new RepoUI(this.jumper, repoName);
 		repoUI.focus();
 		repoUI.run();
+	}
+
+	destroy() {
+		this.jumper.destroy();
+		vats.destroy();
+		fetcher.destroy();
+		process.exit();
 	}
 }
 

@@ -5,6 +5,7 @@ const fetcher = require('../fetcher');
 const uiEndOnEscape = require('../uiEndOnEscape');
 const BaseUI = require('../BaseUI');
 const ReadmeUI = require('./ReadmeUI');
+const FileTreeUI = require('../FileTreeUI');
 const BranchesUI = require('./BranchesUI');
 const CommitsUI = require('./CommitsUI');
 const IssuesUI = require('./IssuesUI');
@@ -55,7 +56,7 @@ module.exports = class RepoUI extends BaseUI {
 
 			const View = uiEndOnEscape({
 				readme: ReadmeUI,
-				// files: FilesUI,
+				files: FileTreeUI,
 				branches: BranchesUI,
 				commits: CommitsUI,
 				issues: IssuesUI,

@@ -37,6 +37,7 @@ module.exports = class HorizontalBlock extends ViStateUI {
 		this.state.documentHeight = 1;
 
 		vats.viStateHandler.clampState(this.state);
+		this.currentIdx = Math.max(0, Math.min(this.currentIdx, this.state.cursorX))
 	}
 
 	onKeybinding({ kb }) {
@@ -49,7 +50,7 @@ module.exports = class HorizontalBlock extends ViStateUI {
 		// un-highlight old
 		if (previousState && previousState.cursorX !== this.state.cursorX) {
 			this.getSelectedBlock().content(this.getSelectedBlock().escapedText);
-			this.calculateIdxFromState(this.state, previousState);
+			this.currentIdx = this.calculateIdxFromState(this.state, previousState);
 		}
 
 		// highlight selected
@@ -89,6 +90,6 @@ module.exports = class HorizontalBlock extends ViStateUI {
 			return accum + this.blocks[i].escapedText.length;
 		}, 0);
 
-		this.currentIdx = targetIdx;
+		return targetIdx;
 	}
 };
