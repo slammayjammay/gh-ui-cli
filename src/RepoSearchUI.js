@@ -43,8 +43,8 @@ module.exports = class RepoSearchUI extends BaseUI {
 			return this.end(false);
 		}
 
-		const json = await fetcher.searchRepos(query, true);
-		// const json = await (await fetcher.searchRepos(query)).json();
+		// const json = await fetcher.searchRepos(query, true);
+		const json = await (await fetcher.searchRepos(query)).json();
 
 		json.items.forEach(item => {
 			const padded = pad(item.full_name, this.resultsUI.div.width());

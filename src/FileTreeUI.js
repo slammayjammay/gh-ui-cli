@@ -1,5 +1,10 @@
+const { spawnSync } = require('child_process');
+const fs = require('fs');
 const { basename } = require('path');
+const tmp = require('tmp');
+const escapes = require('ansi-escapes');
 const chalk = require('chalk');
+const pager = require('node-pager');
 const fetcher = require('./fetcher');
 const vats = require('./vats');
 const pad = require('./pad');
@@ -41,6 +46,7 @@ module.exports = class FileTreeUI extends BaseUI {
 
 		this.addVatsListener('state-change', 'onStateChange');
 		this.addVatsListener('keybinding', 'onKeybinding');
+		this.addVatsListener('command', 'onCommand');
 	}
 
 	getState() {
@@ -161,18 +167,46 @@ module.exports = class FileTreeUI extends BaseUI {
 		}
 	}
 
-	onKeybinding({ kb }) {
-		if (/cursor-(left|right)/.test(kb.action.name)) {
-			let needsRender = false;
-			if (kb.action.name.includes('right')) {
-				const node = this.getSelectedFile();
-				node.type === 'tree' && this.cd(node);
-				needsRender = node.type === 'tree';
-			} else if (this.current.parent) {
-				this.cd(this.current.parent);
-				needsRender = true;
-			}
-			needsRender && vats.emitEvent('state-change');
+	async onKeybinding({ kb }) {
+		let needsRender = false;
+		const file = this.getSelectedFile();
+
+		if (file.type === 'tree' && ['cursor-right', 'return'].includes(kb.action.name)) {
+			this.cd(file);
+			needsRender = true;
+		} else if (file.parent && kb.action.name === 'cursor-left') {
+			this.cd(this.current.parent);
+			needsRender = true;
+		} else if (file.type !== 'tree' && kb.action.name === 'return') {
+			file.content = file.content || (await this.loadFileContent(file));
+			await pager(file.content);
+			needsRender = true;
+		}
+
+		needsRender && vats.emitEvent('state-change');
+	}
+
+	async onCommand({ argv }) {
+		const command = argv._[0];
+
+		if (command === 'vim') {
+			const file = this.getSelectedFile();
+			file.content = file.content || (await this.loadFileContent(file));
+
+			const name = file.path.replace(/\//g, '_');
+
+			tmp.file({ name }, (err, path, fd, done) => {
+				if (err) {
+					throw err;
+				}
+
+				fs.writeSync(fd, file.content);
+				process.stdout.write(escapes.cursorShow);
+				spawnSync(`vim "${path}"`, { shell: process.env.SHELL, stdio: 'inherit' });
+				process.stdout.write(escapes.cursorHide);
+
+				done();
+			});
 		}
 	}
 

@@ -35,7 +35,7 @@ module.exports = class RepoUI extends BaseUI {
 			block.name = action;
 		});
 
-		this.addVatsListener('keypress', 'onKeypress');
+		this.addVatsListener('keybinding', 'onKeybinding');
 	}
 
 	getState() {
@@ -50,8 +50,8 @@ module.exports = class RepoUI extends BaseUI {
 		vats.emitEvent('state-change');
 	}
 
-	onKeypress({ key }) {
-		if (key.formatted === 'return') {
+	onKeybinding({ kb }) {
+		if (kb.action.name === 'return') {
 			const block = this.div.getSelectedBlock();
 
 			const View = uiEndOnEscape({
