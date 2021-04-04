@@ -13,6 +13,8 @@ module.exports = class FileTreeUI extends BaseUI {
 		super(...arguments);
 
 		this.repoData = repoData;
+		this.cache = new Map();
+		this.current = null;
 
 		this.col1 = this.jumper.addDivision({
 			id: 'col-1',
@@ -24,15 +26,15 @@ module.exports = class FileTreeUI extends BaseUI {
 		this.col2 = new ViStateUI(this.jumper, {
 			id: 'col-2',
 			top: `{col-1}t`,
-			left: `{col-1}r`,
-			width: `(100% - {col-1}l) * 0.3`,
+			left: `{col-1}r + 1`,
+			width: `(100% - {col-1}l) * 0.3 - 1`,
 			height: `100% - {col-1}t`
 		});
 		this.col3 = this.jumper.addDivision({
 			id: 'col-3',
 			top: `{col-2}t`,
-			left: `{col-2}r`,
-			width: `(100% - {col-1}l) * 0.4`,
+			left: `{col-2}r + 1`,
+			width: `(100% - {col-1}l) * 0.4 - 1`,
 			height: `100% - {col-1}t`,
 			overflowX: 'scroll'
 		});
@@ -62,22 +64,34 @@ module.exports = class FileTreeUI extends BaseUI {
 	}
 
 	cd(node) {
+		if (this.current) {
+			this.cache.get(this.current).activeIdx = this.col2.currentIdx;
+		}
+
 		[this.col1, this.col2.div, this.col3].forEach(div => div.reset());
 
-		node.parent && this.getChildren(node.parent).forEach(file => {
-			const block = this.col1.addBlock(basename(file.path));
-			block.file = file;
-			block.content(colorscheme.colorBlock(block, 'default'));
-		});
-
-		this.getChildren(node).forEach(file => {
-			const block = this.col2.addBlock(pad(basename(file.path), this.col2.div.width()));
-			block.file = file;
-			block.content(colorscheme.colorBlock(block, 'default'));
-		});
+		node.parent && this.populateColumn(this.col1, node.parent);
+		this.populateColumn(this.col2.div, node);
 		this.col2.sync();
 
+		this.col2.setSelectedBlock(this.cache.get(node).activeIdx);
+
 		this.current = node;
+	}
+
+	populateColumn(column, node) {
+		if (!node) {
+			return column.reset();
+		}
+
+		!this.cache.has(node) && this.cache.set(node, { activeIdx: 0 });
+		const { activeIdx } = this.cache.get(node);
+
+		this.getChildren(node).forEach((file, idx) => {
+			const block = column.addBlock(pad(basename(file.path), column.width()));
+			block.file = file;
+			block.content(colorscheme.colorBlock(block, idx === activeIdx ? 'highlight' : 'default'));
+		});
 	}
 
 	getChildren(node) {
@@ -102,11 +116,7 @@ module.exports = class FileTreeUI extends BaseUI {
 		this.col3.reset();
 
 		if (file.type === 'tree') {
-			this.getChildren(file).forEach(child => {
-				const block = this.col3.addBlock(basename(child.path))
-				block.file = child;
-				block.content(colorscheme.colorBlock(block, 'default'));
-			});
+			this.populateColumn(this.col3, file);
 		} else {
 			this.previewFile(file);
 		}

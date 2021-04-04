@@ -54,6 +54,14 @@ module.exports = class ViStateUI extends BaseUI {
 		this.currentIdx = Math.max(0, Math.min(this.currentIdx, this.state.cursorY))
 	}
 
+	setSelectedBlock(idx) {
+		this.currentIdx = idx;
+
+		this.state.cursorY = this.div.blockIds.slice(0, idx).reduce((accum, id) => {
+			return accum + this.div.getBlock(id).height();
+		}, 0);
+	}
+
 	onKeybinding({ kb }) {
 		if (['cursor-up', 'cursor-down'].includes(kb.action.name)) {
 			this.adjustKbForMultiLine(kb);
