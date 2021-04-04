@@ -18,6 +18,7 @@ module.exports = class FileTreeUI extends BaseUI {
 		super(...arguments);
 
 		this.repoData = repoData;
+		this.tree = null;
 		this.cache = new Map();
 		this.current = null;
 
@@ -40,8 +41,7 @@ module.exports = class FileTreeUI extends BaseUI {
 			top: `{col-2}t`,
 			left: `{col-2}r + 1`,
 			width: `(100% - {col-1}l) * 0.4 - 1`,
-			height: `100% - {col-1}t`,
-			overflowX: 'scroll'
+			height: `100% - {col-1}t`
 		});
 
 		this.addVatsListener('state-change', 'onStateChange');
@@ -132,38 +132,27 @@ module.exports = class FileTreeUI extends BaseUI {
 
 	previewFile(file) {
 		const { children, content, ...json } = file;
-		const text = `${JSON.stringify(json, null, 2)}\n`
-		this.col3.addBlock(text, 'json');
 
 		if (file.content) {
 			return this.col3.addBlock(file.content);
 		}
 
-		this.col3.addBlock(`Press ${chalk.italic("ctrl+l")} to load ${chalk.blue(file.path)}.`, 'load');
+		this.col3.addBlock(`Press ${chalk.bold('enter')} to load ${chalk.blue(file.path)}.`, 'load');
 	}
 
 	async loadFileContent(file) {
-		const res = await fetcher.getFile(this.repoData.full_name, file.path);
+		const res = await fetcher.getFile(this.repoData, file.path);
 		const json = await res.json();
 		return Buffer.from(json.content, json.encoding).toString();
 	}
 
 	onKeypress({ key }) {
 		const file = this.getSelectedFile();
-
-		if (key.formatted === 'ctrl+l' && file.type !== 'tree') {
-			const block = this.col3.getBlock('load');
-			block.content(`Loading ${chalk.blue(file.path)}...`);
+		if (file.type !== 'tree' && ['J', 'K', 'F', 'B'].includes(key.formatted)) {
+			const height = this.col3.height();
+			const amount = { J: 1, K: -1, F: height, B: -height }[key.formatted];
+			this.col3.scrollDown(amount);
 			this.jumper.render();
-
-			this.loadFileContent(file).then(content => {
-				file.content = content;
-
-				if (this.getSelectedFile() === file) {
-					block.content(file.content);
-					this.jumper.render();
-				}
-			});
 		}
 	}
 
@@ -174,13 +163,20 @@ module.exports = class FileTreeUI extends BaseUI {
 		if (file.type === 'tree' && ['cursor-right', 'return'].includes(kb.action.name)) {
 			this.cd(file);
 			needsRender = true;
-		} else if (file.parent && kb.action.name === 'cursor-left') {
+		} else if (this.current.parent && kb.action.name === 'cursor-left') {
 			this.cd(this.current.parent);
 			needsRender = true;
 		} else if (file.type !== 'tree' && kb.action.name === 'return') {
-			file.content = file.content || (await this.loadFileContent(file));
-			await pager(file.content);
+			this.col3.getBlock('load').content(`Loading ${chalk.blue(file.path)}...`);
 			needsRender = true;
+
+			this.loadFileContent(file).then(content => {
+				file.content = content;
+				if (this.getSelectedFile() === file) {
+					this.col3.getBlock('load').content(file.content);
+					this.jumper.render();
+				}
+			});
 		}
 
 		needsRender && vats.emitEvent('state-change');
@@ -188,9 +184,12 @@ module.exports = class FileTreeUI extends BaseUI {
 
 	async onCommand({ argv }) {
 		const command = argv._[0];
+		const file = this.getSelectedFile();
 
-		if (command === 'vim') {
-			const file = this.getSelectedFile();
+		if (command === 'less' && file.type !== 'tree') {
+			file.content = file.content || (await this.loadFileContent(file));
+			await pager(file.content);
+		} else if (command === 'vim' && file.type !== 'tree') {
 			file.content = file.content || (await this.loadFileContent(file));
 
 			const name = file.path.replace(/\//g, '_');
@@ -216,6 +215,10 @@ module.exports = class FileTreeUI extends BaseUI {
 			div.destroy();
 		});
 		this.col2.destroy();
+
+		this.col1 = this.col2 = this.col3 = null;
+		this.repoData = this.current = this.tree = this.cache = null;
+
 		super.destroy();
 	}
 };

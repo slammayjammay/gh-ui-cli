@@ -34,23 +34,19 @@ class Fetcher {
 	}
 
 	getBranches(repoData) {
-		const url = repoData.branches_url.replace('{/branch}', '');
-		return this.fetch(url);
+		return this.fetch(repoData.branches_url.replace('{/branch}', ''));
 	}
 
 	getCommits(repoData) {
-		const url = repoData.commits_url.replace('{/sha}', '');
-		return this.fetch(url);
+		return this.fetch(repoData.commits_url.replace('{/sha}', ''));
 	}
 
 	getIssues(repoData) {
-		const url = repoData.issues_url.replace('{/number}', '');
-		return this.fetch(url);
+		return this.fetch(repoData.issues_url.replace('{/number}', ''));
 	}
 
 	getFile(repoData, filePath) {
-		const url = repoData.contents_url.replace('{+path}', filePath);
-		return this.fetch(url);
+		return this.fetch(repoData.contents_url.replace('{+path}', filePath));
 	}
 
 	getFiles(repoData, sha = repoData.default_branch) {
