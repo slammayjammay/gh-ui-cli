@@ -59,7 +59,7 @@ module.exports = class FileTreeUI extends BaseUI {
 	}
 
 	async run() {
-		const json = await (await fetcher.getFiles(this.repoData.full_name)).json();
+		const json = await (await fetcher.getFiles(this.repoData)).json();
 		const files = json.tree;
 		this.tree = createFileTree(files);
 

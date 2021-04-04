@@ -10,8 +10,7 @@ module.exports = class CommitsUI extends ViStateUI {
 	}
 
 	async run() {
-		const url = this.repoData.commits_url.replace('{/sha}', '');
-		const commits = await (await fetcher.fetch(url)).json();
+		const commits = await (await fetcher.getCommits(this.repoData)).json();
 
 		commits.forEach(({ commit }) => {
 			const width = this.div.width();

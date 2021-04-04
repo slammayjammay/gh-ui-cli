@@ -1,6 +1,5 @@
 const fetch = require('node-fetch');
 
-// TODO: use urls from repoData
 class Fetcher {
 	constructor(username, token) {
 		if (username && token) {
@@ -34,12 +33,28 @@ class Fetcher {
 		return this.fetch(`https://api.github.com/repos/${repoName}`);
 	}
 
-	getFile(repoName, filePath) {
-		return this.fetch(`https://api.github.com/repos/${repoName}/contents/${filePath}`);
+	getBranches(repoData) {
+		const url = repoData.branches_url.replace('{/branch}', '');
+		return this.fetch(url);
 	}
 
-	getFiles(repoName, sha = 'master') {
-		return this.fetch(`https://api.github.com/repos/${repoName}/git/trees/${sha}?recursive=true`);
+	getCommits(repoData) {
+		const url = repoData.commits_url.replace('{/sha}', '');
+		return this.fetch(url);
+	}
+
+	getIssues(repoData) {
+		const url = repoData.issues_url.replace('{/number}', '');
+		return this.fetch(url);
+	}
+
+	getFile(repoData, filePath) {
+		const url = repoData.contents_url.replace('{+path}', filePath);
+		return this.fetch(url);
+	}
+
+	getFiles(repoData, sha = repoData.default_branch) {
+		return this.fetch(`https://api.github.com/repos/${repoData.full_name}/git/trees/${sha}?recursive=true`);
 	}
 
 	destroy() {

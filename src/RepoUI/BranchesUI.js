@@ -10,9 +10,7 @@ module.exports = class BranchesUI extends ViStateUI {
 	}
 
 	async run() {
-		const url = this.repoData.branches_url.replace('{/branch}', '');
-		const branches = await (await fetcher.fetch(url)).json();
-
+		const branches = await (await fetcher.getBranches(this.repoData)).json();
 		branches.forEach(({ name }) => this.div.addBlock(pad(name, this.div.width())));
 
 		this.sync();

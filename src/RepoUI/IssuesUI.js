@@ -11,8 +11,7 @@ module.exports = class CommitsUI extends ViStateUI {
 	}
 
 	async run() {
-		const url = this.repoData.issues_url.replace('{/number}', '');
-		const issues = await (await fetcher.fetch(url)).json();
+		const issues = await (await fetcher.getIssues(this.repoData)).json();
 
 		// TODO: dates
 		issues.forEach(issue => {

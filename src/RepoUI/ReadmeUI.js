@@ -23,7 +23,7 @@ module.exports = class ReadmeUI extends BaseUI {
 	}
 
 	async run() {
-		this.data = await (await fetcher.getFile(this.repoData.full_name, 'README.md')).json();
+		this.data = await (await fetcher.getFile(this.repoData, 'README.md')).json();
 
 		const text = Buffer.from(this.data.content, this.data.encoding).toString();
 		this.div.addBlock(text, 'readme');
