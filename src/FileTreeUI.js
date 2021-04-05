@@ -4,7 +4,7 @@ const { basename } = require('path');
 const tmp = require('tmp');
 const escapes = require('ansi-escapes');
 const chalk = require('chalk');
-const pager = require('node-pager');
+const pager = require('./pager');
 const fetcher = require('./fetcher');
 const vats = require('./vats');
 const pad = require('./pad');
@@ -18,7 +18,6 @@ module.exports = class FileTreeUI extends BaseUI {
 		super(...arguments);
 
 		this.repoData = repoData;
-		this.tree = null;
 		this.cache = new Map();
 		this.current = null;
 
@@ -58,14 +57,9 @@ module.exports = class FileTreeUI extends BaseUI {
 		super.focus();
 	}
 
-	async run() {
-		const json = await (await fetcher.getFiles(this.repoData)).json();
-		const files = json.tree;
-		this.tree = createFileTree(files);
-
-		this.cd(this.tree.root);
+	run() {
+		this.cd(this.repoData.tree.root);
 		vats.emitEvent('state-change');
-
 		return super.run();
 	}
 
@@ -134,7 +128,7 @@ module.exports = class FileTreeUI extends BaseUI {
 		const { children, content, ...json } = file;
 
 		if (file.content) {
-			return this.col3.addBlock(file.content);
+			return this.col3.addBlock(colorscheme.autoSyntax(file.content, file.path));
 		}
 
 		this.col3.addBlock(`Press ${chalk.bold('enter')} to load ${chalk.blue(file.path)}.`, 'load');
@@ -167,16 +161,20 @@ module.exports = class FileTreeUI extends BaseUI {
 			this.cd(this.current.parent);
 			needsRender = true;
 		} else if (file.type !== 'tree' && kb.action.name === 'return') {
-			this.col3.getBlock('load').content(`Loading ${chalk.blue(file.path)}...`);
-			needsRender = true;
-
-			this.loadFileContent(file).then(content => {
-				file.content = content;
-				if (this.getSelectedFile() === file) {
-					this.col3.getBlock('load').content(file.content);
-					this.jumper.render();
-				}
-			});
+			if (file.content) {
+				await pager(colorscheme.autoSyntax(file.content, file.path));
+			} else if (!file.content) {
+				this.col3.getBlock('load').content(`Loading ${chalk.blue(file.path)}...`);
+				needsRender = true;
+				this.loadFileContent(file).then(content => {
+					file.content = content;
+					if (this.getSelectedFile() === file) {
+						this.col3.reset();
+						this.previewFile(file);
+						this.jumper.render();
+					}
+				});
+			}
 		}
 
 		needsRender && vats.emitEvent('state-change');
@@ -188,7 +186,7 @@ module.exports = class FileTreeUI extends BaseUI {
 
 		if (command === 'less' && file.type !== 'tree') {
 			file.content = file.content || (await this.loadFileContent(file));
-			await pager(file.content);
+			await pager(colorscheme.autoSyntax(file.content, file.path));
 		} else if (command === 'vim' && file.type !== 'tree') {
 			file.content = file.content || (await this.loadFileContent(file));
 
@@ -217,7 +215,7 @@ module.exports = class FileTreeUI extends BaseUI {
 		this.col2.destroy();
 
 		this.col1 = this.col2 = this.col3 = null;
-		this.repoData = this.current = this.tree = this.cache = null;
+		this.repoData = this.current = this.cache = null;
 
 		super.destroy();
 	}

@@ -1,6 +1,7 @@
 const chalk = require('chalk');
 const escapes = require('ansi-escapes');
 const fetcher = require('../fetcher');
+const colorscheme = require('../colorscheme');
 const BaseUI = require('../BaseUI');
 
 module.exports = class ReadmeUI extends BaseUI {
@@ -23,10 +24,11 @@ module.exports = class ReadmeUI extends BaseUI {
 	}
 
 	async run() {
-		this.data = await (await fetcher.getFile(this.repoData, 'README.md')).json();
-
+		const readme = this.repoData.tree.allFiles.find(file => /^readme/i.test(file.path));
+		this.data = await (await fetcher.getFile(this.repoData, readme.path)).json();
 		const text = Buffer.from(this.data.content, this.data.encoding).toString();
-		this.div.addBlock(text, 'readme');
+
+		this.div.addBlock(colorscheme.autoSyntax(text, readme.path), 'readme');
 
 		return super.run(...arguments);
 	}

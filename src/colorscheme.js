@@ -1,4 +1,7 @@
+const { extname } = require('path');
 const chalk = require('chalk');
+const highlight = require('highlight.js');
+const emphasize = require('emphasize');
 
 class Colorscheme {
 	constructor() {
@@ -20,6 +23,20 @@ class Colorscheme {
 			return this.color(block.escapedText, type === 'default' ? 'folder' : 'folder-highlight');
 		} else {
 			return this.color(block.escapedText, type);
+		}
+	}
+
+	autoSyntax(text, path) {
+		const ext = path && extname(path).slice(1);
+
+		if (path && !ext) {
+			return text;
+		}
+
+		if (ext && highlight.getLanguage(ext)) {
+			return emphasize.highlight(ext, text).value;
+		} else {
+			return emphasize.highlightAuto(text).value;
 		}
 	}
 }

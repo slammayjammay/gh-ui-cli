@@ -2,6 +2,7 @@
   "dependencies": {
     "ansi-escapes": "^4.3.2",
     "chalk": "^4.1.0",
+    "emphasize": "^4.2.0",
     "node-fetch": "^2.6.1",
     "node-pager": "^0.3.5",
     "readline-refresh-line": "github:slammayjammay/readline-refresh-line",

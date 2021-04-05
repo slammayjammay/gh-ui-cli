@@ -2,6 +2,7 @@ const pad = require('../pad');
 const vats = require('../vats');
 const fetcher = require('../fetcher');
 const colorscheme = require('../colorscheme');
+const createFileTree = require('../create-file-tree');
 const uiEndOnEscape = require('../uiEndOnEscape');
 const BaseUI = require('../BaseUI');
 const ReadmeUI = require('./ReadmeUI');
@@ -17,6 +18,7 @@ module.exports = class RepoUI extends BaseUI {
 		super(jumper);
 
 		this.repoName = repoName;
+		this.onFilesFetched = null;
 
 		this.jumper.addDivision({ id: 'repo-name', top: 0, left: 1, width: '100% - 1' });
 		this.jumper.getDivision('repo-name').addBlock(this.repoName + '\n');
@@ -45,6 +47,12 @@ module.exports = class RepoUI extends BaseUI {
 	async run() {
 		this.repoData = await (await fetcher.getRepo(this.repoName)).json();
 
+		this.onFilesFetched = fetcher.getFiles(this.repoData).then(res => res.json());
+		this.onFilesFetched.then(json => {
+			this.repoData.tree = createFileTree(json.tree);
+			this.repoData.tree.allFiles = json.tree;
+		});
+
 		this.jumper.render();
 		this.div.sync();
 		vats.emitEvent('state-change');
@@ -52,35 +60,40 @@ module.exports = class RepoUI extends BaseUI {
 
 	onKeybinding({ kb }) {
 		if (kb.action.name === 'return') {
-			const block = this.div.getSelectedBlock();
-
-			const View = uiEndOnEscape({
-				readme: ReadmeUI,
-				files: FileTreeUI,
-				branches: BranchesUI,
-				commits: CommitsUI,
-				issues: IssuesUI,
-				// releases: ReleasesUI
-			}[block.name]);
-
-			const view = new View(this.jumper, {
-				id: `repo-${block.name}`,
-				top: '{repo-actions}b + 1',
-				left: '{repo-actions}l',
-				width: `100% - {repo-${block.name}}l`
-			}, this.repoData);
-
-			block.content(colorscheme.color(block.escapedText, 'inactive'));
-			this.div.setContent();
-
-			this.unfocus();
-			this.div.unfocus();
-			view.focus();
-			view.run().then(() => {
-				this.focus();
-				this.div.focus();
-				vats.emitEvent('state-change');
-			});
+			this.onFilesFetched.then(() => this.onTabClick());
 		}
+	}
+
+	onTabClick() {
+		const block = this.div.getSelectedBlock();
+		const divOptions = {
+			id: `repo-${block.name}`,
+			top: '{repo-actions}b + 1',
+			left: '{repo-actions}l',
+			width: `100% - {repo-${block.name}}l`
+		};
+
+		const View = uiEndOnEscape({
+			readme: ReadmeUI,
+			files: FileTreeUI,
+			branches: BranchesUI,
+			commits: CommitsUI,
+			issues: IssuesUI,
+			// releases: ReleasesUI
+		}[block.name]);
+
+		const view = new View(this.jumper, divOptions, this.repoData);
+
+		block.content(colorscheme.color(block.escapedText, 'inactive'));
+		this.div.setContent();
+
+		this.unfocus();
+		this.div.unfocus();
+		view.focus();
+		view.run().then(() => {
+			this.focus();
+			this.div.focus();
+			vats.emitEvent('state-change');
+		});
 	}
 };
