@@ -21,7 +21,7 @@ module.exports = class RepoUI extends BaseUI {
 		this.onFilesFetched = null;
 
 		this.jumper.addDivision({ id: 'repo-name', top: 0, left: 1, width: '100% - 1' });
-		this.jumper.getDivision('repo-name').addBlock(this.repoName + '\n');
+		this.jumper.getDivision('repo-name').addBlock(this.repoName + '\n', 'name');
 
 		this.div = new HorizontalBlock(this.jumper, {
 			id: 'repo-actions',
@@ -40,17 +40,22 @@ module.exports = class RepoUI extends BaseUI {
 		this.addVatsListener('keybinding', 'onKeybinding');
 	}
 
-	getState() {
+	getViState() {
 		return this.div.state;
 	}
 
 	async run() {
 		this.repoData = await (await fetcher.getRepo(this.repoName)).json();
 
+		const block = this.jumper.getBlock('repo-name.name');
+		block.content(`${this.repoName} (loading files...)`);
+
 		this.onFilesFetched = fetcher.getFiles(this.repoData).then(res => res.json());
 		this.onFilesFetched.then(json => {
 			this.repoData.tree = createFileTree(json.tree);
 			this.repoData.tree.allFiles = json.tree;
+			block.content(this.repoName);
+			this.jumper.render();
 		});
 
 		this.jumper.render();

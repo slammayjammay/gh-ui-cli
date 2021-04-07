@@ -7,7 +7,9 @@ module.exports = class BaseUI {
 		this.resolve = null;
 	}
 
-	getState() {}
+	getViState() {}
+	getSearchableItems() {}
+	getSearchOptions() {}
 
 	addVatsListener(event, methodName) {
 		const cb = this[methodName].bind(this);
@@ -26,9 +28,12 @@ module.exports = class BaseUI {
 	}
 
 	focus() {
-		if (this.getState()) {
-			vats.options.getViState = () => this.getState();
-		}
+		vats.searcher.clearCache();
+
+		['getViState', 'getSearchableItems', 'getSearchOptions'].forEach(method => {
+			this[method]() && (vats.options[method] = () => this[method]());
+		});
+
 		this.vatsCbs.forEach(([event, cb]) => vats.on(event, cb));
 	}
 

@@ -48,8 +48,8 @@ module.exports = class FileTreeUI extends BaseUI {
 		this.addVatsListener('command', 'onCommand');
 	}
 
-	getState() {
-		return this.col2.getState();
+	getViState() {
+		return this.col2.getViState();
 	}
 
 	focus() {
@@ -108,7 +108,7 @@ module.exports = class FileTreeUI extends BaseUI {
 	}
 
 	onStateChange({ previousState }) {
-		if (previousState && previousState.cursorY === this.getState().cursorY) {
+		if (previousState && previousState.cursorY === this.getViState().cursorY) {
 			return;
 		}
 
@@ -177,7 +177,8 @@ module.exports = class FileTreeUI extends BaseUI {
 			}
 		}
 
-		needsRender && vats.emitEvent('state-change');
+		vats.emitEvent('state-change', { previousState: this.getViState() });
+		needsRender && this.jumper.render();
 	}
 
 	async onCommand({ argv }) {

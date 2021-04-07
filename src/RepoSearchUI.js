@@ -29,9 +29,9 @@ module.exports = class RepoSearchUI extends BaseUI {
 		this.resultsUI.focus();
 	}
 
-	getState() {
-		return this.resultsUI.state;
-	}
+	getViState() { return this.resultsUI.getViState(); }
+	getSearchableItems() { return this.resultsUI.getSearchableItems(); }
+	getSearchOptions() { return this.resultsUI.getSearchOptions(); }
 
 	async run() {
 		this.promptForSearchQuery().then(query => this.fetchRepos(query));
@@ -46,9 +46,15 @@ module.exports = class RepoSearchUI extends BaseUI {
 		const json = await fetcher.searchRepos(query, true);
 		// const json = await (await fetcher.searchRepos(query)).json();
 
+		const width = this.resultsUI.div.width();
 		json.items.forEach(item => {
-			const padded = pad(item.full_name, this.resultsUI.div.width());
-			this.resultsUI.addBlock(padded);
+			const lines = [item.full_name];
+			item.description && lines.push(`"${item.description.slice(0, 50)}"`);
+			lines.push(`⭐${item.stargazers_count}`);
+			lines.push(`⑂ ${item.forks_count}`);
+			item.language && lines.push(`(${item.language})`);
+			const text = lines.map(s => pad(s, width)).join('\n');
+			this.resultsUI.addBlock(text + '\n').name = item.full_name;
 		});
 		this.resultsUI.sync();
 		vats.emitEvent('state-change');
@@ -75,7 +81,7 @@ module.exports = class RepoSearchUI extends BaseUI {
 		if (key.formatted === 'escape') {
 			this.promptForSearchQuery().then(query => this.fetchRepos(query));
 		} else if (key.formatted === 'return') {
-			const repo = this.resultsUI.getSelectedBlock().escapedText;
+			const repo = this.resultsUI.getSelectedBlock().name;
 			this.jumper.getDivision('input').reset();
 			this.resultsUI.div.reset();
 			this.jumper.chain().render().jumpTo(0, 0).execute();

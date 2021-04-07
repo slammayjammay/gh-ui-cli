@@ -20,13 +20,33 @@ module.exports = class ViStateUI extends BaseUI {
 		};
 
 		this.currentIdx = 0;
+		this.blocks = [];
 
 		this.addVatsListener('keybinding', 'onKeybinding');
 		this.addVatsListener('state-change', 'onStateChange');
+		this.addVatsListener('search', 'onSearch');
 	}
 
-	getState() {
+	getViState() {
 		return this.state;
+	}
+
+	getSearchableItems() {
+		if (!this.blocks) {
+			this.blocks = this.div.blockIds.map(id => this.div.getBlock(id));
+		}
+
+		return this.blocks;
+	}
+
+	getSearchOptions() {
+		return {
+			useCache: true,
+			startItemIndex: this.currentIdx,
+			testFn: (block, query) => {
+				return block.escapedText.toLowerCase().includes(query.toLowerCase());
+			}
+		};
 	}
 
 	addBlock(text, id, idx) {
@@ -52,6 +72,8 @@ module.exports = class ViStateUI extends BaseUI {
 
 		vats.viStateHandler.clampState(this.state);
 		this.currentIdx = Math.max(0, Math.min(this.currentIdx, this.state.cursorY))
+
+		this.blocks = this.div.blockIds.map(id => this.div.getBlock(id));
 	}
 
 	setSelectedBlock(idx) {
@@ -77,7 +99,7 @@ module.exports = class ViStateUI extends BaseUI {
 		if (previousState && previousState.cursorY !== this.state.cursorY) {
 			const block = this.getSelectedBlock();
 			block.content(colorscheme.colorBlock(block, 'default'));
-			this.currentIdx = this.calculateIdxFromState(this.state, previousState);
+			this.currentIdx = this.calculateIdxFromState(this.state);
 		}
 
 		// highlight selected
@@ -92,6 +114,21 @@ module.exports = class ViStateUI extends BaseUI {
 		this.jumper.render();
 	}
 
+	onSearch({ index }) {
+		if (index < 0) {
+			return;
+		}
+
+		const previousState = { ...this.state };
+
+		const cursorY = this.div.blockIds.slice(0, index).reduce((accum, id) => {
+			return accum + this.div.getBlock(id).height();
+		}, 0);
+
+		const changed = vats.viStateHandler.setState(this.state, { cursorY });
+		changed && vats.emitEvent('state-change', { previousState });
+	}
+
 	adjustKbForMultiLine(kb) {
 		const dir = kb.action.name.includes('down') ? 1 : -1;
 		const targetIdx = Math.max(0 , Math.min(this.currentIdx + kb.count * dir, this.div.blockIds.length));
@@ -100,28 +137,16 @@ module.exports = class ViStateUI extends BaseUI {
 		kb.count = ids.reduce((accum, id) => accum + this.div.getBlock(id).height(), 0);
 	}
 
-	calculateIdxFromState(state, previousState) {
-		const diffY = state.cursorY - previousState.cursorY;
-		const isBackward = diffY < 0;
-
-		let i = 0;
+	calculateIdxFromState(state) {
+		let index = 0;
 		let accum = 0;
-		for (let l = this.div.blockIds.length - 1; i < l; i++) {
+		for (let l = this.div.blockIds.length - 1; index < l; index++) {
 			if (accum >= state.cursorY) {
 				break;
 			}
-			accum += this.getBlockAtIdx(i).height();
+			accum += this.getBlockAtIdx(index).height();
 		}
-		const targetIdx = i;
-
-		const fromTo = [this.currentIdx, targetIdx];
-		const ids = this.div.blockIds.slice(...(isBackward ? fromTo.reverse() : fromTo));
-
-		const height = ids.reduce((accum, id) => {
-			return this.div.getBlock(id).height() + accum;
-		}, 0);
-
-		return targetIdx;
+		return index;
 	}
 
 	destroy() {

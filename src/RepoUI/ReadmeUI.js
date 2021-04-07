@@ -25,10 +25,14 @@ module.exports = class ReadmeUI extends BaseUI {
 
 	async run() {
 		const readme = this.repoData.tree.allFiles.find(file => /^readme/i.test(file.path));
-		this.data = await (await fetcher.getFile(this.repoData, readme.path)).json();
-		const text = Buffer.from(this.data.content, this.data.encoding).toString();
 
-		this.div.addBlock(colorscheme.autoSyntax(text, readme.path), 'readme');
+		if (readme) {
+			this.data = await (await fetcher.getFile(this.repoData, readme.path)).json();
+			const text = Buffer.from(this.data.content, this.data.encoding).toString();
+			this.div.addBlock(colorscheme.autoSyntax(text, readme.path), 'readme');
+		} else {
+			this.div.addBlock('No readme found.', 'readme');
+		}
 
 		return super.run(...arguments);
 	}
@@ -102,6 +106,7 @@ module.exports = class ReadmeUI extends BaseUI {
 	destroy() {
 		this.jumper.removeDivision(this.div);
 		this.div.destroy();
+		this.jumper = this.div = this.repoData = null;
 		super.destroy();
 	}
 };
