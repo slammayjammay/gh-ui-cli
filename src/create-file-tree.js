@@ -17,7 +17,7 @@ class Tree {
 		dirs.forEach((name, i) => {
 			if (!current.children.has(name)) {
 				const path = dirs.slice(0, i + 1).join('/');
-				current.children.set(name, { path, parent: current, children: new Map() });
+				current.children.set(name, { path, children: new Map() });
 			}
 
 			current = current.children.get(name);
@@ -29,19 +29,21 @@ class Tree {
 	}
 
 	convert() {
-		const traverse = (node) => {
+		const traverse = (node, parent) => {
 			if (this.cache.get(node.path)) {
 				Object.assign(node, this.cache.get(node.path));
 				this.cache.set(node.path, node);
 			}
 
+			node.parent = parent;
+
 			if (node.children) {
 				node.children = Array.from(node.children.values());
-				node.children.forEach(traverse);
+				node.children.forEach(child => traverse(child, node));
 			}
 		};
 
-		traverse(this.root);
+		traverse(this.root, null);
 	}
 }
 

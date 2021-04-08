@@ -5,12 +5,12 @@ const colorscheme = require('../colorscheme');
 const createFileTree = require('../create-file-tree');
 const uiEndOnEscape = require('../uiEndOnEscape');
 const BaseUI = require('../BaseUI');
+const ViStateUI = require('../ViStateUI');
 const ReadmeUI = require('./ReadmeUI');
 const FileTreeUI = require('../FileTreeUI');
 const BranchesUI = require('./BranchesUI');
 const CommitsUI = require('./CommitsUI');
 const IssuesUI = require('./IssuesUI');
-const ViStateUI = require('../ViStateUI');
 const HorizontalBlock = require('../HorizontalBlock');
 
 module.exports = class RepoUI extends BaseUI {
@@ -31,7 +31,8 @@ module.exports = class RepoUI extends BaseUI {
 		});
 		this.div.focus();
 
-		const actions = ['readme', 'files', 'branches', 'commits', 'issues', 'releases'];
+		// TODO: releases
+		const actions = ['readme', 'files', 'branches', 'commits', 'issues'];
 		actions.forEach(action => {
 			const block = this.div.addBlock(` ${action} `);
 			block.name = action;

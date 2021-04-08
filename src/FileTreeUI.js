@@ -10,8 +10,10 @@ const vats = require('./vats');
 const pad = require('./pad');
 const colorscheme = require('./colorscheme');
 const createFileTree = require('./create-file-tree');
+const uiEndOnEscape = require('./uiEndOnEscape');
 const BaseUI = require('./BaseUI');
 const ViStateUI = require('./ViStateUI');
+const CtrlPUI = require('./CtrlPUI');
 
 module.exports = class FileTreeUI extends BaseUI {
 	constructor(jumper, divOptions, repoData) {
@@ -54,7 +56,12 @@ module.exports = class FileTreeUI extends BaseUI {
 
 	focus() {
 		this.col2.focus();
-		super.focus();
+		return super.focus();
+	}
+
+	unfocus() {
+		this.col2.unfocus();
+		return super.unfocus();
 	}
 
 	run() {
@@ -63,7 +70,7 @@ module.exports = class FileTreeUI extends BaseUI {
 		return super.run();
 	}
 
-	cd(node) {
+	cd(node, shouldRender = false) {
 		if (this.current) {
 			this.cache.get(this.current).activeIdx = this.col2.currentIdx;
 		}
@@ -77,6 +84,26 @@ module.exports = class FileTreeUI extends BaseUI {
 		this.col2.setSelectedBlock(this.cache.get(node).activeIdx);
 
 		this.current = node;
+
+		if (shouldRender) {
+			vats.emitEvent('state-change');
+			this.jumper.render();
+		}
+	}
+
+	cdToFile(file, shouldRender) {
+		this.current = null;
+		let currentChild = file;
+		let currentParent = file.parent;
+
+		while (currentParent) {
+			!this.cache.has(currentParent) && this.cache.set(currentParent, {});
+			this.cache.get(currentParent).activeIdx = this.getChildren(currentParent).indexOf(currentChild);
+			currentChild = currentParent;
+			currentParent = currentParent.parent;
+		}
+
+		this.cd(file.parent, shouldRender);
 	}
 
 	populateColumn(column, node) {
@@ -151,34 +178,43 @@ module.exports = class FileTreeUI extends BaseUI {
 	}
 
 	async onKeybinding({ kb }) {
-		let needsRender = false;
 		const file = this.getSelectedFile();
 
 		if (file.type === 'tree' && ['cursor-right', 'return'].includes(kb.action.name)) {
-			this.cd(file);
-			needsRender = true;
+			this.cd(file, true);
 		} else if (this.current.parent && kb.action.name === 'cursor-left') {
-			this.cd(this.current.parent);
-			needsRender = true;
+			this.cd(this.current.parent, true);
 		} else if (file.type !== 'tree' && kb.action.name === 'return') {
-			if (file.content) {
-				await pager(colorscheme.autoSyntax(file.content, file.path));
-			} else if (!file.content) {
-				this.col3.getBlock('load').content(`Loading ${chalk.blue(file.path)}...`);
-				needsRender = true;
-				this.loadFileContent(file).then(content => {
-					file.content = content;
-					if (this.getSelectedFile() === file) {
-						this.col3.reset();
-						this.previewFile(file);
-						this.jumper.render();
-					}
-				});
+			this.onSelectFile(file);
+		} else if (kb.action.name === 'ctrl+p') {
+			const ui = new CtrlPUI(this.jumper, this.repoData);
+
+			ui.focus();
+			this.unfocus();
+
+			ui.run().then(file => {
+				this.focus();
+				file ? this.cdToFile(file) : this.jumper.setDirty(this.col1);
+				this.jumper.render();
+				vats.emitEvent('state-change');
+			});
+		}
+	}
+
+	async onSelectFile(file) {
+		if (file.content) {
+			await pager(colorscheme.autoSyntax(file.content, file.path));
+		} else if (!file.content) {
+			this.col3.getBlock('load').content(`Loading ${chalk.blue(file.path)}...`);
+			const content = await this.loadFileContent(file);
+
+			file.content = content;
+			if (this.getSelectedFile() === file) {
+				this.col3.reset();
+				this.previewFile(file);
+				this.jumper.render();
 			}
 		}
-
-		vats.emitEvent('state-change', { previousState: this.getViState() });
-		needsRender && this.jumper.render();
 	}
 
 	async onCommand({ argv }) {
