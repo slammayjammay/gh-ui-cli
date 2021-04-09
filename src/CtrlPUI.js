@@ -12,6 +12,7 @@ module.exports = class CtrlPUI extends BaseUI {
 
 		this.currentIdx = 0;
 		this.found = [];
+		this.files = this.repoData.tree.allFiles.filter(o => o.type !== 'tree');
 
 		this.div = this.jumper.addDivision({
 			id: 'ctrlp',
@@ -70,7 +71,7 @@ module.exports = class CtrlPUI extends BaseUI {
 	}
 
 	runQuery(query = vats.promptMode.getLine()) {
-		const found = fuzzyFind(this.repoData.tree.allFiles, query, {
+		const found = fuzzyFind(this.files, query, {
 			map: item => item.path
 		});
 		this.updateResults(found.slice(0, 10).reverse());
