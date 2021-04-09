@@ -4,6 +4,7 @@ const fetcher = require('../fetcher');
 const colorscheme = require('../colorscheme');
 const BaseUI = require('../BaseUI');
 
+// TODO: allow searching
 module.exports = class ReadmeUI extends BaseUI {
 	constructor(jumper, divOptions, repoData) {
 		super(jumper);

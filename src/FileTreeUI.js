@@ -15,6 +15,7 @@ const BaseUI = require('./BaseUI');
 const ViStateUI = require('./ViStateUI');
 const CtrlPUI = require('./CtrlPUI');
 
+// TODO: Use ViStateUI for all columns
 module.exports = class FileTreeUI extends BaseUI {
 	constructor(jumper, divOptions, repoData) {
 		super(...arguments);
