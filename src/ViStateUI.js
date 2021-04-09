@@ -82,6 +82,8 @@ module.exports = class ViStateUI extends BaseUI {
 		this.state.cursorY = this.div.blockIds.slice(0, idx).reduce((accum, id) => {
 			return accum + this.div.getBlock(id).height();
 		}, 0);
+
+		vats.viStateHandler.clampState(this.state);
 	}
 
 	onKeybinding({ kb }) {

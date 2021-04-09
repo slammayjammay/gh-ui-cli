@@ -2,6 +2,7 @@ const escapes = require('ansi-escapes');
 const chalk = require('chalk');
 const vats = require('./vats');
 const pad = require('./pad');
+const fuzzyFind = require('./fuzzy-find');
 const BaseUI = require('./BaseUI');
 
 module.exports = class CtrlPUI extends BaseUI {
@@ -36,13 +37,16 @@ module.exports = class CtrlPUI extends BaseUI {
 			if (!input) {
 				return this.end();
 			}
-			const file = this.found[this.div.blockIds.length - 1 - this.currentIdx];
-			this.end(file);
+			this.end(this.found[this.div.blockIds.length - 1 - this.currentIdx].item);
 		});
+
 		process.nextTick(() => {
-			this.updateResults(this.repoData.tree.allFiles.slice(0, 10));
-			this.jumper.chain().appendToChain(this.div.eraseString({})).render().execute();
-			this.renderResults();
+			this.runQuery();
+			this.jumper.chain()
+				.appendToChain(this.div.eraseString({}))
+				.appendToChain(this.div.renderString())
+				.appendToChain(this.renderLineString())
+				.execute();
 		});
 
 		return super.run();
@@ -65,10 +69,11 @@ module.exports = class CtrlPUI extends BaseUI {
 		}
 	}
 
-	runQuery() {
-		const query = vats.promptMode.getLine();
-		const found = this.filter(this.repoData.tree.allFiles, query);
-		this.updateResults(found);
+	runQuery(query = vats.promptMode.getLine()) {
+		const found = fuzzyFind(this.repoData.tree.allFiles, query, {
+			map: item => item.path
+		});
+		this.updateResults(found.slice(0, 10).reverse());
 		this.renderResults();
 	}
 
@@ -79,14 +84,27 @@ module.exports = class CtrlPUI extends BaseUI {
 		if (items.length === 0) {
 			this.div.addBlock(chalk.bgRed.bold.white(' == NO ENTRIES =='));
 		} else {
-			items.forEach((file, idx) => {
-				let text = '> ' + file.path;
+			items.forEach(({ indices, item }, idx) => {
+				let text = this.formatItem(item.path, indices);
 				if (idx === items.length - 1 - this.currentIdx) {
 					text = chalk.underline(pad(text, this.div.width()));
 				}
-				this.div.addBlock(text).file = file;
+				this.div.addBlock(text).file = item;
 			});
 		}
+	}
+
+	formatItem(path, indices = []) {
+		const chars = [];
+		let j = 0;
+
+		for (let i = 0, l = path.length; i < l; i++) {
+			const isMatch = i === indices[j];
+			chars.push(isMatch ? chalk.bold.blue(path[i]) : path[i]);
+			isMatch && j++;
+		}
+
+		return `> ${chars.join('')}`;
 	}
 
 	renderResults() {
@@ -95,37 +113,23 @@ module.exports = class CtrlPUI extends BaseUI {
 		this.jumper.execute();
 	}
 
-	getFormattedLine() {
+	formatPrompt() {
 		const cursor = vats.promptMode.rl.cursor;
 		const prompt = vats.promptMode.getPrompt();
 		const line = vats.promptMode.getLine();
 
 		if (cursor === line.length) {
-			return `${prompt}${line}_`;
+			return `${prompt}${line}${chalk.underline(' ')}`;
 		}
 
 		const formatted = line.slice(0, cursor) + chalk.underline(line[cursor]) + line.slice(cursor + 1);
 		return prompt + formatted;
 	}
 
-	renderLineString(line = this.getFormattedLine()) {
+	renderLineString(line = this.formatPrompt()) {
 		return this.jumper.jumpToString(0, '{ctrlp}b') +
 			escapes.eraseLine + line +
 			this.jumper.jumpToString(0, `{ctrlp}b - 1 - ${this.currentIdx}`);
-	}
-
-	filter(items, query, max = 10) {
-		const found = [];
-		// TODO: be smarter than this
-		for (let i = 0, l = items.length; i < l; i++) {
-			if (items[i].path.toLowerCase().includes(query.toLowerCase())) {
-				found.push(items[i]);
-			}
-			if (found.length >= 10) {
-				break;
-			}
-		}
-		return found;
 	}
 
 	destroy() {
