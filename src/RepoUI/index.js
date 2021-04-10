@@ -1,3 +1,4 @@
+const figlet = require('figlet');
 const pad = require('../pad');
 const vats = require('../vats');
 const fetcher = require('../fetcher');
@@ -21,7 +22,9 @@ module.exports = class RepoUI extends BaseUI {
 		this.onFilesFetched = null;
 
 		this.jumper.addDivision({ id: 'repo-name', top: 0, left: 1, width: '100% - 1' });
-		this.jumper.getDivision('repo-name').addBlock(this.repoName + '\n', 'name');
+
+		this.figletName = this.getFigletName();
+		this.jumper.getDivision('repo-name').addBlock(this.figletName, 'name');
 
 		this.div = new HorizontalBlock(this.jumper, {
 			id: 'repo-actions',
@@ -41,6 +44,26 @@ module.exports = class RepoUI extends BaseUI {
 		this.addVatsListener('keybinding', 'onKeybinding');
 	}
 
+	getFigletName(text = this.repoName) {
+		const lines = [];
+		const names = text.split('/').map(string => {
+			return figlet.textSync(string, { font: 'Calvin S' }).split('\n');
+		});
+		const numLines = names[0].length;
+
+		for (let i = 0; i < numLines; i++) {
+			const junk = [];
+			names.forEach(line => junk.push(line[i]));
+			const slash = [
+				...new Array(numLines - i).fill(' '),
+				'╱',
+				...new Array(i).fill(' '),
+			].join('');
+			lines.push(junk.join(`${slash} `));
+		}
+		return lines.join('\n');
+	}
+
 	getViState() {
 		return this.div.state;
 	}
@@ -49,13 +72,13 @@ module.exports = class RepoUI extends BaseUI {
 		this.repoData = await (await fetcher.getRepo(this.repoName)).json();
 
 		const block = this.jumper.getBlock('repo-name.name');
-		block.content(`${this.repoName} (loading files...)`);
+		block.content(`${this.figletName} (loading files...)`);
 
 		this.onFilesFetched = fetcher.getFiles(this.repoData).then(res => res.json());
 		this.onFilesFetched.then(json => {
 			this.repoData.tree = createFileTree(json.tree);
 			this.repoData.tree.allFiles = json.tree;
-			block.content(this.repoName);
+			block.content(this.figletName);
 			this.jumper.render();
 		});
 
