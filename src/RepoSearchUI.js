@@ -1,12 +1,13 @@
 const escapes = require('ansi-escapes');
 const chalk = require('chalk');
+const figlet = require('figlet');
 const pad = require('./pad');
 const vats = require('./vats');
 const fetcher = require('./fetcher');
 const BaseUI = require('./BaseUI');
 const ViStateUI = require('./ViStateUI');
 
-const PROMPT = 'Enter a repo name > ';
+const PROMPT = ' Enter a repo name > ';
 
 module.exports = class RepoSearchUI extends BaseUI {
 	constructor() {
@@ -14,19 +15,32 @@ module.exports = class RepoSearchUI extends BaseUI {
 
 		this.resolve = null;
 
-		this.jumper.addDivision({ id: 'input', top: 0, left: 1, width: '100% - {input}l' });
-		this.jumper.getDivision('input').addBlock(PROMPT, 'prompt');
+		this.jumper.addDivision({
+			id: 'header',
+			top: 0,
+			left: 1,
+			width: '100% - {header}l'
+		});
+		const text = figlet.textSync('Repo Search', { font: 'Calvin S' });
+		this.jumper.getDivision('header').addBlock(text, 'header');
 
-		this.addVatsListener('keypress', 'onKeypress');
+		this.jumper.addDivision({
+			id: 'input',
+			top: '100% - 1',
+			left: 1,
+			width: '100% - {input}l'
+		});
+		this.jumper.getDivision('input').addBlock(PROMPT, 'prompt');
 
 		this.resultsUI = new ViStateUI(this.jumper, {
 			id: 'results',
-			top: '{input}b + 1',
-			left: '{input}l',
-			width: '{input}w',
+			top: '{header}b + 1',
+			left: '{header}l',
+			width: '{header}w',
 			height: '100%'
 		});
 
+		this.addVatsListener('keypress', 'onKeypress');
 		this.resultsUI.focus();
 	}
 
@@ -39,21 +53,30 @@ module.exports = class RepoSearchUI extends BaseUI {
 		return super.run();
 	}
 
+	async promptForSearchQuery() {
+		const eraseString = this.resultsUI.div.eraseString();
+
+		this.resultsUI.div.reset();
+
+		process.stdout.write(this.jumper.renderString() + escapes.cursorShow);
+		const query = await vats.prompt({ prompt: PROMPT });
+		process.stdout.write(escapes.cursorHide);
+
+		return query;
+	}
+
 	async fetchRepos(query) {
 		if (!query) {
 			return this.end(false);
 		}
 
 		this.jumper.getBlock('input.prompt').content(`Searching for ${chalk.bold.blue(query)}...`);
-		this.jumper.chain().appendToChain(this.jumper.getDivision('input').eraseString({
-			startLeft: 0,
-			startTop: 0
-		})).render().execute();
+		this.jumper.render();
 
 		// const json = await fetcher.searchRepos(query, true);
 		const json = await (await fetcher.searchRepos(query)).json();
 
-		this.jumper.getBlock('input.prompt').content(`Showing results for ${chalk.bold.blue(query)}:`);
+		this.jumper.getDivision('header').addBlock(`Showing results for ${chalk.bold.blue(query)}:`);
 
 		const width = this.resultsUI.div.width();
 		json.items.forEach(item => {
@@ -69,23 +92,6 @@ module.exports = class RepoSearchUI extends BaseUI {
 		vats.emitEvent('state-change');
 	}
 
-	async promptForSearchQuery() {
-		const eraseString = this.resultsUI.div.eraseString();
-
-		this.resultsUI.div.reset();
-
-		process.stdout.write(
-			this.jumper.renderString() +
-			this.jumper.jumpToString(0, 0)
-		);
-
-		process.stdout.write(escapes.cursorShow);
-		const query = await vats.prompt({ prompt: PROMPT });
-		process.stdout.write(escapes.cursorHide);
-
-		return query;
-	}
-
 	onKeypress({ key }) {
 		if (key.formatted === 'escape') {
 			this.promptForSearchQuery().then(query => this.fetchRepos(query));
@@ -99,6 +105,12 @@ module.exports = class RepoSearchUI extends BaseUI {
 	}
 
 	destroy() {
+		['header', 'input'].forEach(id => {
+			const div = this.jumper.getDivision(id);
+			this.jumper.removeDivision(div);
+			div.destroy();
+		});
+
 		this.resultsUI.destroy();
 		this.resultsUI = this.resolve = null;
 
