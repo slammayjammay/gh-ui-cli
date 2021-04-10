@@ -70,13 +70,14 @@ module.exports = class RepoSearchUI extends BaseUI {
 			return this.end(false);
 		}
 
-		this.jumper.getBlock('input.prompt').content(`Searching for ${chalk.bold.blue(query)}...`);
+		this.jumper.removeBlock('input.prompt');
+		this.jumper.getDivision('header').addBlock(`Searching for ${chalk.bold.blue(query)}...`, 'block');
 		this.jumper.render();
 
 		// const json = await fetcher.searchRepos(query, true);
 		const json = await (await fetcher.searchRepos(query)).json();
 
-		this.jumper.getDivision('header').addBlock(`Showing results for ${chalk.bold.blue(query)}:`);
+		this.jumper.getBlock('header.block').content(`Showing results for ${chalk.bold.blue(query)}:`);
 
 		const width = this.resultsUI.div.width();
 		json.items.forEach(item => {
