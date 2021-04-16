@@ -7,6 +7,7 @@ const vats = require('./vats');
 const RepoSearchUI = require('./RepoSearchUI');
 const RepoUI = require('./RepoUI');
 
+// global commands: "help", "render"
 class Program {
 	constructor() {
 		this.jumper = new Jumper({ useAlternateScreen: false });

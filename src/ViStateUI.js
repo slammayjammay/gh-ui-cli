@@ -1,12 +1,19 @@
+const Division = require('../../terminal-jumper/src/Division');
 const vats = require('./vats');
 const colorscheme = require('./colorscheme');
 const BaseUI = require('./BaseUI');
 
+const DEFAULTS = {
+	colorDefault: text => colorscheme.color(text, 'default'),
+	colorHighlight: text => colorscheme.color(text, 'highlight')
+};
+
 module.exports = class ViStateUI extends BaseUI {
-	constructor(jumper, divOptions) {
+	constructor(jumper, divOptions, options = {}) {
 		super(jumper);
 
 		this.div = this.jumper.addDivision(divOptions);
+		this.options = { ...DEFAULTS, ...options };
 
 		this.state = {
 			windowWidth: 1,
@@ -100,13 +107,13 @@ module.exports = class ViStateUI extends BaseUI {
 		// un-highlight old
 		if (previousState && previousState.cursorY !== this.state.cursorY) {
 			const block = this.getSelectedBlock();
-			block.content(colorscheme.colorBlock(block, 'default'));
+			block.content(this.options.colorDefault(block.escapedText, block));
 			this.currentIdx = this.calculateIdxFromState(this.state);
 		}
 
 		// highlight selected
 		const block = this.getSelectedBlock();
-		block.content(colorscheme.colorBlock(block, 'highlight'));
+		block.content(this.options.colorHighlight(block.escapedText, block));
 
 		this.div.scroll(this.state.scrollX, this.state.scrollY);
 		if (this.state.cursorY - this.state.scrollY + block.height() > this.state.windowHeight) {

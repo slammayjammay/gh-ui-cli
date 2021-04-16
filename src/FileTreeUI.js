@@ -37,7 +37,7 @@ module.exports = class FileTreeUI extends BaseUI {
 			left: `{col-1}r + 1`,
 			width: `(100% - {col-1}l) * 0.3 - 1`,
 			height: `100% - {col-1}t`
-		});
+		}, { colorDefault: this.colorDefault, colorHighlight: this.colorHighlight });
 		this.col3 = this.jumper.addDivision({
 			id: 'col-3',
 			top: `{col-2}t`,
@@ -47,6 +47,7 @@ module.exports = class FileTreeUI extends BaseUI {
 		});
 
 		this.addVatsListener('state-change', 'onStateChange');
+		this.addVatsListener('keypress', 'onKeypress');
 		this.addVatsListener('keybinding', 'onKeybinding');
 		this.addVatsListener('command', 'onCommand');
 	}
@@ -63,12 +64,6 @@ module.exports = class FileTreeUI extends BaseUI {
 	unfocus() {
 		this.col2.unfocus();
 		return super.unfocus();
-	}
-
-	run() {
-		this.cd(this.repoData.tree.root);
-		vats.emitEvent('state-change');
-		return super.run();
 	}
 
 	cd(node, shouldRender = false) {
@@ -120,6 +115,14 @@ module.exports = class FileTreeUI extends BaseUI {
 			block.file = file;
 			block.content(colorscheme.colorBlock(block, idx === activeIdx ? 'highlight' : 'default'));
 		});
+	}
+
+	colorDefault(text, block) {
+		return colorscheme.color(text, block.file.type === 'tree' ? 'folder' : 'default');
+	}
+
+	colorHighlight(text, block) {
+		return colorscheme.color(text, block.file.type === 'tree' ? 'folder-highlight' : 'highlight');
 	}
 
 	getChildren(node) {

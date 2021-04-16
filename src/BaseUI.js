@@ -38,12 +38,18 @@ module.exports = class BaseUI {
 	}
 
 	unfocus() {
-		vats.options.getViState = null;
+		this.removeFromVats();
+	}
+
+	removeFromVats() {
+		['getViState', 'getSearchableItems', 'getSearchOptions'].forEach(method => {
+			vats.options[method] = null;
+		});
 		this.vatsCbs.forEach(([event, cb]) => vats.removeListener(event, cb));
 	}
 
 	destroy() {
-		this.vatsCbs.forEach(([event, cb]) => vats.removeListener(event, cb));
+		this.removeFromVats();
 		this.jumper = this.vatsCbs = this.resolve = null;
 	}
 };

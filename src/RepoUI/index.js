@@ -1,3 +1,4 @@
+const chalk = require('chalk');
 const figlet = require('figlet');
 const pad = require('../pad');
 const vats = require('../vats');
@@ -7,41 +8,44 @@ const createFileTree = require('../create-file-tree');
 const uiEndOnEscape = require('../uiEndOnEscape');
 const BaseUI = require('../BaseUI');
 const ViStateUI = require('../ViStateUI');
-const ReadmeUI = require('./ReadmeUI');
+const SidebarUI = require('./SidebarUI');
 const FileTreeUI = require('../FileTreeUI');
 const BranchesUI = require('./BranchesUI');
 const CommitsUI = require('./CommitsUI');
 const IssuesUI = require('./IssuesUI');
-const HorizontalBlock = require('../HorizontalBlock');
+
+const DIVS = {
+	REPO_NAME: { id: 'repo-name', top: 0, left: 1, width: '100% - 1' },
+	SIDEBAR_PROMPT: { id: 'sidebar-prompt', top: '{repo-name}b', left: 1, overflowX: 'scroll', width: '{sidebar-prompt}nw' },
+	SIDEBAR: { id: 'sidebar', top: '{repo-name}b', left: 0, width: 'min(40, 100%)', height: '100%' },
+	HR: { id: 'hr', top: '{sidebar-prompt}b', left: 1, width: '100% - {hr}l' },
+	FILE_UI: { id: 'file-ui', top: '{hr}b + 1', left: '{hr}l', width: `100% - {file-ui}l` }
+};
 
 module.exports = class RepoUI extends BaseUI {
 	constructor(jumper, repoName) {
 		super(jumper);
 
 		this.repoName = repoName;
-		this.onFilesFetched = null;
 
-		this.jumper.addDivision({ id: 'repo-name', top: 0, left: 1, width: '100% - 1' });
+		this.jumper.addDivision(DIVS.REPO_NAME);
+		this.sidebarPrompt = this.jumper.addDivision(DIVS.SIDEBAR_PROMPT);
+		this.sidebarUI = new SidebarUI(this.jumper, DIVS.SIDEBAR, {
+			colorDefault: text => chalk.bgHex('#0d1117').blue.bold(text),
+			colorHighlight: text => chalk.white.bold.bgHex('#21262d')(text)
+		});
+		this.sidebarUI.close();
+		this.sidebarUI.run().then(name => this.end(name));
+		this.hr = this.jumper.addDivision(DIVS.HR);
 
 		this.figletName = this.getFigletName();
 		this.jumper.getDivision('repo-name').addBlock(this.figletName, 'name');
 
-		this.div = new HorizontalBlock(this.jumper, {
-			id: 'repo-actions',
-			top: '{repo-name}b',
-			left: 1,
-			width: '100%'
-		});
-		this.div.focus();
+		this.jumper.getDivision('sidebar-prompt').addBlock(chalk.bgHex('#0d1117').blue.bold(' tab > '), 'prompt');
 
-		// TODO: releases
-		const actions = ['readme', 'files', 'branches', 'commits', 'issues'];
-		actions.forEach(action => {
-			const block = this.div.addBlock(` ${action} `);
-			block.name = action;
-		});
+		this.hr.addBlock(new Array(this.hr.width()).fill(chalk.underline(' ')));
 
-		this.addVatsListener('keybinding', 'onKeybinding');
+		this.addVatsListener('keypress', 'onKeypress');
 	}
 
 	getFigletName(text = this.repoName) {
@@ -64,65 +68,57 @@ module.exports = class RepoUI extends BaseUI {
 		return lines.join('\n');
 	}
 
-	getViState() {
-		return this.div.state;
-	}
-
 	async run() {
 		this.repoData = await (await fetcher.getRepo(this.repoName)).json();
 
-		const block = this.jumper.getBlock('repo-name.name');
-		block.content(`${this.figletName} (loading files...)`);
+		this.jumper.getBlock('repo-name.name').content(`${this.figletName} (loading files...)`);
+		this.jumper.render();
+		vats.emitEvent('state-change');
 
-		this.onFilesFetched = fetcher.getFiles(this.repoData).then(res => res.json());
-		this.onFilesFetched.then(json => {
+		fetcher.getFiles(this.repoData).then(res => res.json()).then(json => {
+			this.jumper.getBlock('repo-name.name').content(this.figletName);
 			this.repoData.tree = createFileTree(json.tree);
 			this.repoData.tree.allFiles = json.tree;
-			block.content(this.figletName);
-			this.jumper.render();
+			this.openFileUI();
 		});
-
-		this.jumper.render();
-		this.div.sync();
-		vats.emitEvent('state-change');
 	}
 
-	onKeybinding({ kb }) {
-		if (kb.action.name === 'return') {
-			this.onFilesFetched.then(() => this.onTabClick());
+	openFileUI() {
+		this.fileUI = new FileTreeUI(this.jumper, DIVS.FILE_UI, this.repoData);
+		this.fileUI.focus();
+		const readme = this.repoData.tree.allFiles.find(file => /^readme\.md/i.test(file.path));
+		if (!readme) {
+			this.fileUI.cd(this.repoData.tree.root, true);
+		} else {
+			this.fileUI.cdToFile(readme);
+			this.fileUI.loadFileContent(readme).then(content => {
+				this.fileUI.col2.getSelectedBlock().file = readme;
+				readme.content = content;
+				vats.emitEvent('state-change');
+			});
 		}
+		this.fileUI.run();
 	}
 
-	onTabClick() {
-		const block = this.div.getSelectedBlock();
-		const divOptions = {
-			id: `repo-${block.name}`,
-			top: '{repo-actions}b + 1',
-			left: '{repo-actions}l',
-			width: `100% - {repo-${block.name}}l`
-		};
+	onKeypress({ key }) {
+		if (key.formatted === 'escape' && this.sidebarUI.isOpen()) {
+			this.sidebarUI.close();
+			this.sidebarUI.unfocus();
+			this.fileUI.focus();
+			this.jumper.render();
+		} else if (key.formatted === 'tab') {
+			if (this.sidebarUI.isOpen()) {
+				this.sidebarUI.close();
+				this.sidebarUI.unfocus();
+				this.fileUI.focus();
+			} else {
+				this.sidebarUI.open();
+				this.fileUI.unfocus();
+				this.sidebarUI.focus();
+				vats.emitEvent('state-change');
+			}
 
-		const View = uiEndOnEscape({
-			readme: ReadmeUI,
-			files: FileTreeUI,
-			branches: BranchesUI,
-			commits: CommitsUI,
-			issues: IssuesUI,
-			// releases: ReleasesUI
-		}[block.name]);
-
-		const view = new View(this.jumper, divOptions, this.repoData);
-
-		block.content(colorscheme.color(block.escapedText, 'inactive'));
-		this.div.setContent();
-
-		this.unfocus();
-		this.div.unfocus();
-		view.focus();
-		view.run().then(() => {
-			this.focus();
-			this.div.focus();
-			vats.emitEvent('state-change');
-		});
+			this.jumper.render();
+		}
 	}
 };
