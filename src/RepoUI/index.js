@@ -5,7 +5,6 @@ const vats = require('../vats');
 const fetcher = require('../fetcher');
 const colorscheme = require('../colorscheme');
 const createFileTree = require('../create-file-tree');
-const uiEndOnEscape = require('../uiEndOnEscape');
 const BaseUI = require('../BaseUI');
 const ViStateUI = require('../ViStateUI');
 const SidebarUI = require('./SidebarUI');
@@ -85,46 +84,50 @@ module.exports = class RepoUI extends BaseUI {
 			this.jumper.getBlock('repo-name.figlet').content(this.figletName);
 			this.repoData.tree = createFileTree(json.tree);
 			this.repoData.tree.allFiles = json.tree;
-			this.openFileUI();
+			this.openUI('files');
 		});
 	}
 
-	openFileUI() {
-		this.currentAction = 'files';
-		this.currentUI = new FileTreeUI(this.jumper, DIVS.FILE_UI, this.repoData);
+	openUI(action) {
+		this.currentAction = action;
+		if (action === 'files') {
+			this.currentUI = this.openFileUI();
+		} else if (action === 'commits') {
+			this.currentUI = this.openCommitsUI();
+		} else if (action === 'branches') {
+			this.currentUI = this.openBranchesUI();
+		} else if (action === 'issues') {
+			this.currentUI = this.openIssuesUI();
+		}
 		this.currentUI.focus();
+		this.currentUI.run();
+	}
+
+	openFileUI() {
+		const ui = new FileTreeUI(this.jumper, DIVS.FILE_UI, this.repoData);
 		const readme = this.repoData.tree.allFiles.find(file => /^readme\.md/i.test(file.path));
 		if (!readme) {
-			this.currentUI.cd(this.repoData.tree.root, true);
+			ui.cd(this.repoData.tree.root, true);
 		} else {
-			this.currentUI.cdToFile(readme);
-			this.currentUI.loadFileContent(readme).then(content => {
+			ui.cdToFile(readme);
+			ui.loadFileContent(readme).then(content => {
 				readme.content = content;
 				vats.emitEvent('state-change');
 			});
 		}
-		this.currentUI.run();
+		return ui;
 	}
 
 	openCommitsUI() {
-		this.currentAction = 'commits';
-		this.currentUI = new CommitsUI(this.jumper, DIVS.COMMITS_UI, this.repoData);
-		this.currentUI.focus();
-		this.currentUI.run();
+		return new CommitsUI(this.jumper, DIVS.COMMITS_UI, this.repoData);
 	}
 
 	openBranchesUI() {
-		this.currentAction = 'branches';
-		this.currentUI = new BranchesUI(this.jumper, DIVS.COMMITS_UI, this.repoData);
-		this.currentUI.focus();
-		this.currentUI.run();
+		return new BranchesUI(this.jumper, DIVS.COMMITS_UI, this.repoData);
 	}
 
 	openIssuesUI() {
-		this.currentAction = 'issues';
-		this.currentUI = new IssuesUI(this.jumper, DIVS.ISSUES_UI, this.repoData);
-		this.currentUI.focus();
-		this.currentUI.run();
+		return new IssuesUI(this.jumper, DIVS.ISSUES_UI, this.repoData);
 	}
 
 	onKeypress({ key }) {
@@ -155,16 +158,7 @@ module.exports = class RepoUI extends BaseUI {
 
 		if (action !== this.currentName) {
 			this.currentUI.end();
-
-			if (action === 'files') {
-				this.openFileUI();
-			} else if (action === 'commits') {
-				this.openCommitsUI();
-			} else if (action === 'branches') {
-				this.openBranchesUI();
-			} else if (action === 'issues') {
-				this.openIssuesUI();
-			}
+			this.openUI(action);
 		}
 
 		vats.emitEvent('state-change');

@@ -10,7 +10,6 @@ const vats = require('./vats');
 const pad = require('./pad');
 const colorscheme = require('./colorscheme');
 const createFileTree = require('./create-file-tree');
-const uiEndOnEscape = require('./uiEndOnEscape');
 const BaseUI = require('./BaseUI');
 const ViStateUI = require('./ViStateUI');
 const CtrlPUI = require('./CtrlPUI');
