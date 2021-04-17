@@ -14,13 +14,16 @@ const BranchesUI = require('./BranchesUI');
 const CommitsUI = require('./CommitsUI');
 const IssuesUI = require('./IssuesUI');
 
+// TODO: loading screen
 const DIVS = {
 	REPO_NAME: { id: 'repo-name', top: 0, left: 1, width: '100% - 1' },
 	SIDEBAR_PROMPT: { id: 'sidebar-prompt', top: '{repo-name}b', left: 1, overflowX: 'scroll', width: '{sidebar-prompt}nw' },
 	SIDEBAR: { id: 'sidebar', top: '{repo-name}b', left: 0, width: 'min(40, 100%)', height: '100%' },
 	HR: { id: 'hr', top: '{sidebar-prompt}b', left: 1, width: '100% - {hr}l' },
 	FILE_UI: { id: 'file-ui', top: '{hr}b + 1', left: '{hr}l', width: `100% - {file-ui}l` },
-	COMMITS_UI: { id: 'commits-ui', top: '{hr}b + 1', left: '{hr}l', width: `100% - {commits-ui}l` }
+	COMMITS_UI: { id: 'commits-ui', top: '{hr}b + 1', left: '{hr}l', width: `100% - {commits-ui}l` },
+	BRANCHES_UI: { id: 'branches-ui', top: '{hr}b + 1', left: '{hr}l', width: `100% - {branches-ui}l` },
+	ISSUES_UI: { id: 'issues-ui', top: '{hr}b + 1', left: '{hr}l', width: `100% - {issues-ui}l` }
 };
 
 module.exports = class RepoUI extends BaseUI {
@@ -110,6 +113,20 @@ module.exports = class RepoUI extends BaseUI {
 		this.currentUI.run();
 	}
 
+	openBranchesUI() {
+		this.currentAction = 'branches';
+		this.currentUI = new BranchesUI(this.jumper, DIVS.COMMITS_UI, this.repoData);
+		this.currentUI.focus();
+		this.currentUI.run();
+	}
+
+	openIssuesUI() {
+		this.currentAction = 'issues';
+		this.currentUI = new IssuesUI(this.jumper, DIVS.ISSUES_UI, this.repoData);
+		this.currentUI.focus();
+		this.currentUI.run();
+	}
+
 	onKeypress({ key }) {
 		if (key.formatted === 'escape' && this.sidebarUI.isFocused) {
 			this.sidebarUI.close();
@@ -143,6 +160,10 @@ module.exports = class RepoUI extends BaseUI {
 				this.openFileUI();
 			} else if (action === 'commits') {
 				this.openCommitsUI();
+			} else if (action === 'branches') {
+				this.openBranchesUI();
+			} else if (action === 'issues') {
+				this.openIssuesUI();
 			}
 		}
 
