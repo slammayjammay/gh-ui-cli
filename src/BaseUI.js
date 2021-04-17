@@ -3,6 +3,7 @@ const vats = require('./vats');
 module.exports = class BaseUI {
 	constructor(jumper) {
 		this.jumper = jumper;
+		this.isFocused = false;
 		this.vatsCbs = [];
 		this.resolve = null;
 	}
@@ -34,11 +35,15 @@ module.exports = class BaseUI {
 			this[method]() && (vats.options[method] = () => this[method]());
 		});
 
-		this.vatsCbs.forEach(([event, cb]) => vats.on(event, cb));
+		if (!this.isFocused) {
+			this.vatsCbs.forEach(([event, cb]) => vats.on(event, cb));
+		}
+		this.isFocused = true;
 	}
 
 	unfocus() {
 		this.removeFromVats();
+		this.isFocused = false;
 	}
 
 	removeFromVats() {

@@ -1,5 +1,6 @@
 const chalk = require('chalk');
 const pad = require('../pad');
+const vats = require('../vats');
 const ViStateUI = require('../ViStateUI');
 
 module.exports = class SidebarUI extends ViStateUI {
@@ -14,12 +15,6 @@ module.exports = class SidebarUI extends ViStateUI {
 			block.name = string.toLowerCase();
 		});
 		this.sync();
-
-		this.addVatsListener('keypress', 'onKeypress');
-	}
-
-	isOpen() {
-		return this.jumper.hasDivision(this.div.options.id);
 	}
 
 	toggle() {
@@ -48,9 +43,11 @@ module.exports = class SidebarUI extends ViStateUI {
 		fn();
 	}
 
-	onKeypress({ key }) {
-		if (key.formatted === 'enter') {
-			this.end(this.getSelectedBlock.name);
+	onKeybinding({ kb }) {
+		super.onKeybinding(...arguments);
+
+		if (kb.action.name === 'return') {
+			vats.emitEvent('sidebar-action', { action: this.getSelectedBlock().name });
 		}
 	}
 };
