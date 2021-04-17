@@ -1,14 +1,14 @@
-const Division = require('../../terminal-jumper/src/Division');
-const vats = require('./vats');
-const colorscheme = require('./colorscheme');
-const BaseUI = require('./BaseUI');
+import Division from '../../terminal-jumper/src/Division.js';
+import vats from './vats.js';
+import colorscheme from './colorscheme.js';
+import BaseUI from './BaseUI.js';
 
 const DEFAULTS = {
 	colorDefault: text => colorscheme.color(text, 'default'),
 	colorHighlight: text => colorscheme.color(text, 'highlight')
 };
 
-module.exports = class ViStateUI extends BaseUI {
+export default class ViStateUI extends BaseUI {
 	constructor(jumper, divOptions, options = {}) {
 		super(jumper);
 

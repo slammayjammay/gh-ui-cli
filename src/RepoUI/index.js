@@ -1,17 +1,17 @@
-const chalk = require('chalk');
-const figlet = require('figlet');
-const pad = require('../pad');
-const vats = require('../vats');
-const fetcher = require('../fetcher');
-const colorscheme = require('../colorscheme');
-const createFileTree = require('../create-file-tree');
-const BaseUI = require('../BaseUI');
-const ViStateUI = require('../ViStateUI');
-const SidebarUI = require('./SidebarUI');
-const FileTreeUI = require('../FileTreeUI');
-const BranchesUI = require('./BranchesUI');
-const CommitsUI = require('./CommitsUI');
-const IssuesUI = require('./IssuesUI');
+import chalk from 'chalk';
+import figlet from 'figlet';
+import pad from '../pad.js';
+import vats from '../vats.js';
+import fetcher from '../fetcher.js';
+import colorscheme from '../colorscheme.js';
+import createFileTree from '../create-file-tree.js';
+import BaseUI from '../BaseUI.js';
+import ViStateUI from '../ViStateUI.js';
+import SidebarUI from './SidebarUI.js';
+import FileTreeUI from '../FileTreeUI.js';
+import BranchesUI from './BranchesUI.js';
+import CommitsUI from './CommitsUI.js';
+import IssuesUI from './IssuesUI.js';
 
 // TODO: loading screen
 const DIVS = {
@@ -25,7 +25,7 @@ const DIVS = {
 	ISSUES_UI: { id: 'issues-ui', top: '{hr}b + 1', left: '{hr}l', width: `100% - {issues-ui}l` }
 };
 
-module.exports = class RepoUI extends BaseUI {
+export default class RepoUI extends BaseUI {
 	constructor(jumper, repoName) {
 		super(jumper);
 

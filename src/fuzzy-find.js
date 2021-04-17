@@ -46,7 +46,7 @@ class FuzzyFinder {
 	}
 }
 
-module.exports = (string, query, options) => {
+export default (string, query, options) => {
 	const finder = new FuzzyFinder();
 	const found = finder.find(string, query, options);
 	return finder.sort(found);

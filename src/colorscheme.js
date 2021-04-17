@@ -1,7 +1,7 @@
-const { extname } = require('path');
-const chalk = require('chalk');
-const highlight = require('highlight.js');
-const emphasize = require('emphasize');
+import { extname } from 'path';
+import chalk from 'chalk';
+import highlight from 'highlight.js';
+import emphasize from 'emphasize';
 
 class Colorscheme {
 	constructor() {
@@ -41,4 +41,4 @@ class Colorscheme {
 	}
 }
 
-module.exports = new Colorscheme();
+export default new Colorscheme();

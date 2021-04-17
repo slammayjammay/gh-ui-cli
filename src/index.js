@@ -1,11 +1,11 @@
-require('../dotenv')();
-const escapes = require('ansi-escapes');
-require('readline-refresh-line/hijack');
-const Jumper = require('../../terminal-jumper/src');
-const fetcher = require('./fetcher');
-const vats = require('./vats');
-const RepoSearchUI = require('./RepoSearchUI');
-const RepoUI = require('./RepoUI');
+import '../dotenv.js';
+import escapes from 'ansi-escapes';
+import 'readline-refresh-line/hijack.js';
+import Jumper from '../../terminal-jumper/src/index.js';
+import fetcher from './fetcher.js';
+import vats from './vats.js';
+import RepoSearchUI from './RepoSearchUI.js';
+import RepoUI from './RepoUI/index.js';
 
 // global commands: "help", "render"
 class Program {

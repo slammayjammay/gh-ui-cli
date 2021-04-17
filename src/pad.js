@@ -1,6 +1,6 @@
-const stringWidth = require('string-width');
+import stringWidth from 'string-width';
 
-module.exports = (string, maxWidth) => {
+export default (string, maxWidth) => {
 	const diff = maxWidth - stringWidth(string);
 	if (diff <= 0) {
 		return string;

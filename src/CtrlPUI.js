@@ -1,11 +1,11 @@
-const escapes = require('ansi-escapes');
-const chalk = require('chalk');
-const vats = require('./vats');
-const pad = require('./pad');
-const fuzzyFind = require('./fuzzy-find');
-const BaseUI = require('./BaseUI');
+import escapes from 'ansi-escapes';
+import chalk from 'chalk';
+import vats from './vats.js';
+import pad from './pad.js';
+import fuzzyFind from './fuzzy-find.js';
+import BaseUI from './BaseUI.js';
 
-module.exports = class CtrlPUI extends BaseUI {
+export default class CtrlPUI extends BaseUI {
 	constructor(jumper, repoData) {
 		super(jumper);
 		this.repoData = repoData;

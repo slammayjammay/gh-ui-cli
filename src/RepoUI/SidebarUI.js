@@ -1,9 +1,9 @@
-const chalk = require('chalk');
-const pad = require('../pad');
-const vats = require('../vats');
-const ViStateUI = require('../ViStateUI');
+import chalk from 'chalk';
+import pad from '../pad.js';
+import vats from '../vats.js';
+import ViStateUI from '../ViStateUI.js';
 
-module.exports = class SidebarUI extends ViStateUI {
+export default class SidebarUI extends ViStateUI {
 	constructor() {
 		super(...arguments);
 

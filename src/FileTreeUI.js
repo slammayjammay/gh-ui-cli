@@ -1,21 +1,21 @@
-const { spawnSync } = require('child_process');
-const fs = require('fs');
-const { basename } = require('path');
-const tmp = require('tmp');
-const escapes = require('ansi-escapes');
-const chalk = require('chalk');
-const pager = require('./pager');
-const fetcher = require('./fetcher');
-const vats = require('./vats');
-const pad = require('./pad');
-const colorscheme = require('./colorscheme');
-const createFileTree = require('./create-file-tree');
-const BaseUI = require('./BaseUI');
-const ViStateUI = require('./ViStateUI');
-const CtrlPUI = require('./CtrlPUI');
+import { spawnSync } from 'child_process';
+import fs from 'fs';
+import { basename } from 'path';
+import tmp from 'tmp';
+import escapes from 'ansi-escapes';
+import chalk from 'chalk';
+import pager from './pager.js';
+import fetcher from './fetcher.js';
+import vats from './vats.js';
+import pad from './pad.js';
+import colorscheme from './colorscheme.js';
+import createFileTree from './create-file-tree.js';
+import BaseUI from './BaseUI.js';
+import ViStateUI from './ViStateUI.js';
+import CtrlPUI from './CtrlPUI.js';
 
 // TODO: Use ViStateUI for all columns
-module.exports = class FileTreeUI extends BaseUI {
+export default class FileTreeUI extends BaseUI {
 	constructor(jumper, divOptions, repoData) {
 		super(...arguments);
 

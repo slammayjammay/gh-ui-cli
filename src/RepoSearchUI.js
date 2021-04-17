@@ -1,15 +1,15 @@
-const escapes = require('ansi-escapes');
-const chalk = require('chalk');
-const figlet = require('figlet');
-const pad = require('./pad');
-const vats = require('./vats');
-const fetcher = require('./fetcher');
-const BaseUI = require('./BaseUI');
-const ViStateUI = require('./ViStateUI');
+import escapes from 'ansi-escapes';
+import chalk from 'chalk';
+import figlet from 'figlet';
+import pad from './pad.js';
+import vats from './vats.js';
+import fetcher from './fetcher.js';
+import BaseUI from './BaseUI.js';
+import ViStateUI from './ViStateUI.js';
 
 const PROMPT = ' Enter a repo name > ';
 
-module.exports = class RepoSearchUI extends BaseUI {
+export default class RepoSearchUI extends BaseUI {
 	constructor() {
 		super(...arguments);
 

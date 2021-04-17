@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
 class Fetcher {
 	constructor(username, token) {
@@ -58,4 +58,4 @@ class Fetcher {
 	}
 };
 
-module.exports = new Fetcher('slammayjammy', process.env.GH_TOKEN);
+export default new Fetcher('slammayjammy', process.env.GH_TOKEN);

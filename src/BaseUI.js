@@ -1,6 +1,6 @@
-const vats = require('./vats');
+import vats from './vats.js';
 
-module.exports = class BaseUI {
+export default class BaseUI {
 	constructor(jumper) {
 		this.jumper = jumper;
 		this.isFocused = false;

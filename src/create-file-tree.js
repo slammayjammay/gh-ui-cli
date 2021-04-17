@@ -47,6 +47,6 @@ class Tree {
 	}
 }
 
-module.exports = (files) => {
+export default (files) => {
 	return new Tree(files);
 };

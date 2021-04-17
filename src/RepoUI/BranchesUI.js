@@ -1,9 +1,9 @@
-const fetcher = require('../fetcher');
-const vats = require('../vats');
-const pad = require('../pad');
-const ViStateUI = require('../ViStateUI');
+import fetcher from '../fetcher.js';
+import vats from '../vats.js';
+import pad from '../pad.js';
+import ViStateUI from '../ViStateUI.js';
 
-module.exports = class BranchesUI extends ViStateUI {
+export default class BranchesUI extends ViStateUI {
 	constructor(jumper, divOptions, repoData) {
 		super(jumper, divOptions);
 		this.repoData = repoData;
