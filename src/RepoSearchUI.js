@@ -10,6 +10,7 @@ import ViStateUI from './ViStateUI.js';
 
 const PROMPT = ' Enter a repo name > ';
 
+// TODO: cancel requests
 export default class RepoSearchUI extends BaseUI {
 	constructor() {
 		super(...arguments);

@@ -1,6 +1,7 @@
 import chalk from 'chalk';
+import stringWidth from 'string-width';
 import figlet from 'figlet';
-import pad from '../pad.js';
+import center from '../center.js';
 import vats from '../vats.js';
 import fetcher from '../fetcher.js';
 import colorscheme from '../colorscheme.js';
@@ -16,14 +17,14 @@ import IssuesUI from './IssuesUI.js';
 
 // TODO: display current action in header
 const DIVS = {
-	REPO_NAME: { id: 'repo-name', top: 0, left: 1, width: '100% - 1' },
-	SIDEBAR_PROMPT: { id: 'sidebar-prompt', top: '{repo-name}b', left: 1, overflowX: 'scroll', width: '{sidebar-prompt}nw' },
-	SIDEBAR: { id: 'sidebar', top: '{repo-name}b', left: 0, width: 'min(40, 100%)', height: '100%' },
-	HR: { id: 'hr', top: '{sidebar-prompt}b', left: 1, width: '100% - {hr}l' },
-	FILE_UI: { id: 'file-ui', top: '{hr}b + 1', left: '{hr}l', width: `100% - {file-ui}l` },
-	COMMITS_UI: { id: 'commits-ui', top: '{hr}b + 1', left: '{hr}l', width: `100% - {commits-ui}l` },
-	BRANCHES_UI: { id: 'branches-ui', top: '{hr}b + 1', left: '{hr}l', width: `100% - {branches-ui}l` },
-	ISSUES_UI: { id: 'issues-ui', top: '{hr}b + 1', left: '{hr}l', width: `100% - {issues-ui}l` }
+	SIDEBAR_PROMPT: { id: 'sidebar-prompt', top: 0, left: 0, overflowX: 'scroll', width: '{sidebar-prompt}nw' },
+	REPO_NAME: { id: 'repo-name', top: '{sidebar-prompt}b', left: 1, width: '100% - 2' },
+	SIDEBAR: { id: 'sidebar', top: '{sidebar-prompt}t', left: 0, width: 'min(40, 100%)', height: '100%' },
+	HR: { id: 'hr', top: '{repo-name}b', left: 1, width: '{repo-name}w' },
+	FILE_UI: { id: 'file-ui', top: '{hr}b', left: '{hr}l', width: '{repo-name}w' },
+	COMMITS_UI: { id: 'commits-ui', top: '{hr}b', left: '{hr}l', width: '{repo-name}w' },
+	BRANCHES_UI: { id: 'branches-ui', top: '{hr}b', left: '{hr}l', width: '{repo-name}w' },
+	ISSUES_UI: { id: 'issues-ui', top: '{hr}b', left: '{hr}l', width: '{repo-name}w' }
 };
 
 export default class RepoUI extends BaseUI {
@@ -32,8 +33,11 @@ export default class RepoUI extends BaseUI {
 
 		this.repoName = repoName;
 
-		this.jumper.addDivision(DIVS.REPO_NAME);
 		this.sidebarPrompt = this.jumper.addDivision(DIVS.SIDEBAR_PROMPT);
+		this.jumper.getDivision('sidebar-prompt').addBlock(chalk.bgHex('#0d1117').blue.bold(' Tab > '), 'prompt');
+
+		this.jumper.addDivision(DIVS.REPO_NAME);
+
 		this.sidebarUI = new SidebarUI(this.jumper, DIVS.SIDEBAR, {
 			colorDefault: text => chalk.bgHex('#0d1117').blue.bold(text),
 			colorHighlight: text => chalk.white.bold.bgHex('#21262d')(text)
@@ -42,13 +46,12 @@ export default class RepoUI extends BaseUI {
 		this.sidebarUI.run();
 
 		this.hr = this.jumper.addDivision(DIVS.HR);
-		this.hr.addBlock(new Array(this.hr.width()).fill(chalk.underline(' ')));
+		this.hr.addBlock('', 'current-action');
+		this.hr.addBlock(new Array(this.hr.width()).fill(chalk.strikethrough(' ')));
 
 		this.figletName = this.getFigletName();
 		this.jumper.getDivision('repo-name').addBlock(this.figletName, 'figlet');
-		this.jumper.getDivision('repo-name').addBlock(`(${this.repoName})`, 'name');
-
-		this.jumper.getDivision('sidebar-prompt').addBlock(chalk.bgHex('#0d1117').blue.bold(' tab > '), 'prompt');
+		this.jumper.getDivision('repo-name').addBlock(this.repoName, 'name');
 
 		this.addVatsListener('keypress', 'onKeypress');
 		this.addVatsListener('sidebar-action', 'onSidebarAction');
@@ -76,8 +79,10 @@ export default class RepoUI extends BaseUI {
 	}
 
 	async run() {
-		this.jumper.chain().render().jumpTo(0, '100%').execute();
-		const loader = new Loader('Loading files...');
+		const loaderString = 'Loading default branch...';
+		const x = ~~((this.hr.width() - stringWidth(loaderString)) / 2);
+		this.jumper.chain().render().jumpTo(x, '{hr}t').execute();
+		const loader = new Loader(loaderString);
 		loader.play();
 
 		this.repoData = await (await fetcher.getRepo(this.repoName)).json();
@@ -87,48 +92,42 @@ export default class RepoUI extends BaseUI {
 		this.repoData.tree = createFileTree(json.tree);
 		this.repoData.tree.allFiles = json.tree;
 		this.openUI('files');
+
+		const readme = this.repoData.tree.allFiles.find(file => /^readme\.md/i.test(file.path));
+		if (!readme) {
+			this.currentUI.cd(this.repoData.tree.root, true);
+		} else {
+			this.currentUI.cdToFile(readme);
+			!readme.content && this.currentUI.loadFileContent(readme).then(content => {
+				readme.content = content;
+				vats.emitEvent('state-change');
+			});
+		}
+
+		vats.emitEvent('state-change');
 	}
 
 	openUI(action) {
 		this.currentAction = action;
 		if (action === 'files') {
-			this.currentUI = this.openFileUI();
-		} else if (action === 'commits') {
-			this.currentUI = this.openCommitsUI();
+			this.setCurrentAction(chalk.bold(`Files (${chalk.hex('#43ff43')(this.repoData.default_branch)})`));
+			this.currentUI = new FileTreeUI(this.jumper, DIVS.FILE_UI, this.repoData);
 		} else if (action === 'branches') {
-			this.currentUI = this.openBranchesUI();
+			this.setCurrentAction(chalk.bold('Branches'));
+			this.currentUI = new BranchesUI(this.jumper, DIVS.BRANCHES_UI, this.repoData);
+		} else if (action === 'commits') {
+			this.setCurrentAction(chalk.bold('Commits'));
+			this.currentUI = new CommitsUI(this.jumper, DIVS.COMMITS_UI, this.repoData);
 		} else if (action === 'issues') {
-			this.currentUI = this.openIssuesUI();
+			this.setCurrentAction(chalk.bold('Issues'));
+			this.currentUI = new IssuesUI(this.jumper, DIVS.ISSUES_UI, this.repoData);
 		}
 		this.currentUI.focus();
 		this.currentUI.run();
 	}
 
-	openFileUI() {
-		const ui = new FileTreeUI(this.jumper, DIVS.FILE_UI, this.repoData);
-		const readme = this.repoData.tree.allFiles.find(file => /^readme\.md/i.test(file.path));
-		if (!readme) {
-			ui.cd(this.repoData.tree.root, true);
-		} else {
-			ui.cdToFile(readme);
-			!readme.content && ui.loadFileContent(readme).then(content => {
-				readme.content = content;
-				vats.emitEvent('state-change');
-			});
-		}
-		return ui;
-	}
-
-	openCommitsUI() {
-		return new CommitsUI(this.jumper, DIVS.COMMITS_UI, this.repoData);
-	}
-
-	openBranchesUI() {
-		return new BranchesUI(this.jumper, DIVS.COMMITS_UI, this.repoData);
-	}
-
-	openIssuesUI() {
-		return new IssuesUI(this.jumper, DIVS.ISSUES_UI, this.repoData);
+	setCurrentAction(string) {
+		this.hr.getBlock('current-action').content(center(string, this.hr.width()));
 	}
 
 	onKeypress({ key }) {
@@ -160,6 +159,11 @@ export default class RepoUI extends BaseUI {
 		if (action !== this.currentName) {
 			this.currentUI.end();
 			this.openUI(action);
+		}
+
+		// TODO: remember last selected file
+		if (this.currentAction === 'files') {
+			this.currentUI.cd(this.repoData.tree.root);
 		}
 
 		this.jumper.render();
