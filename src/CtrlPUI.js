@@ -66,7 +66,10 @@ export default class CtrlPUI extends BaseUI {
 			this.renderResults();
 		} else {
 			this.currentIdx = 0;
-			process.nextTick(() => this.runQuery());
+			process.nextTick(() => {
+				this.renderLineString();
+				this.runQuery();
+			});
 		}
 	}
 
