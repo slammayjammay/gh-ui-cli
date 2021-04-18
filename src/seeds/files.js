@@ -1,4 +1,4 @@
-{
+export default {
   "sha": "732aac4b70cba0ad5c3ff9b85f8ec908d595a00b",
   "url": "https://api.github.com/repos/slammayjammay/dotfiles/git/trees/732aac4b70cba0ad5c3ff9b85f8ec908d595a00b",
   "tree": [

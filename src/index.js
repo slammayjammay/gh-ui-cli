@@ -7,7 +7,8 @@ import vats from './vats.js';
 import RepoSearchUI from './RepoSearchUI.js';
 import RepoUI from './RepoUI/index.js';
 
-// global commands: "help", "render"
+// TODO: global commands: "help", "render"
+// TODO: take url as argument
 class Program {
 	constructor() {
 		this.jumper = new Jumper({ useAlternateScreen: false });

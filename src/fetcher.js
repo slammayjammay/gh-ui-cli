@@ -23,7 +23,7 @@ class Fetcher {
 	async searchRepos(query, debug = false) {
 		const encoded = encodeURIComponent(query);
 		if (debug) {
-			return require('./seeds/repo-search.json');
+			return (await import('./seeds/repo-search.js')).default;
 		}
 
 		return this.fetch(`https://api.github.com/search/repositories?q=${encoded}`);

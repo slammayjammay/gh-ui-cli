@@ -1,4 +1,4 @@
-{
+export default {
   "total_count": 105520,
   "incomplete_results": false,
   "items": [

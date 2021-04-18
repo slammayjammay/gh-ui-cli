@@ -5,6 +5,7 @@ import vats from '../vats.js';
 import fetcher from '../fetcher.js';
 import colorscheme from '../colorscheme.js';
 import createFileTree from '../create-file-tree.js';
+import Loader from '../Loader.js';
 import BaseUI from '../BaseUI.js';
 import ViStateUI from '../ViStateUI.js';
 import SidebarUI from './SidebarUI.js';
@@ -13,7 +14,7 @@ import BranchesUI from './BranchesUI.js';
 import CommitsUI from './CommitsUI.js';
 import IssuesUI from './IssuesUI.js';
 
-// TODO: loading screen
+// TODO: display current action in header
 const DIVS = {
 	REPO_NAME: { id: 'repo-name', top: 0, left: 1, width: '100% - 1' },
 	SIDEBAR_PROMPT: { id: 'sidebar-prompt', top: '{repo-name}b', left: 1, overflowX: 'scroll', width: '{sidebar-prompt}nw' },
@@ -56,6 +57,7 @@ export default class RepoUI extends BaseUI {
 	getFigletName(text = this.repoName) {
 		const lines = [];
 		const names = text.split('/').map(string => {
+			string = string[0].toUpperCase() + string.slice(1);
 			return figlet.textSync(string, { font: 'Calvin S' }).split('\n');
 		});
 		const numLines = names[0].length;
@@ -74,18 +76,17 @@ export default class RepoUI extends BaseUI {
 	}
 
 	async run() {
+		this.jumper.chain().render().jumpTo(0, '100%').execute();
+		const loader = new Loader('Loading files...');
+		loader.play();
+
 		this.repoData = await (await fetcher.getRepo(this.repoName)).json();
+		const json = await (await fetcher.getFiles(this.repoData)).json();
+		loader.end();
 
-		this.jumper.getBlock('repo-name.figlet').content(`${this.figletName} (loading files...)`);
-		this.jumper.render();
-		vats.emitEvent('state-change');
-
-		fetcher.getFiles(this.repoData).then(res => res.json()).then(json => {
-			this.jumper.getBlock('repo-name.figlet').content(this.figletName);
-			this.repoData.tree = createFileTree(json.tree);
-			this.repoData.tree.allFiles = json.tree;
-			this.openUI('files');
-		});
+		this.repoData.tree = createFileTree(json.tree);
+		this.repoData.tree.allFiles = json.tree;
+		this.openUI('files');
 	}
 
 	openUI(action) {
@@ -110,7 +111,7 @@ export default class RepoUI extends BaseUI {
 			ui.cd(this.repoData.tree.root, true);
 		} else {
 			ui.cdToFile(readme);
-			ui.loadFileContent(readme).then(content => {
+			!readme.content && ui.loadFileContent(readme).then(content => {
 				readme.content = content;
 				vats.emitEvent('state-change');
 			});
@@ -161,6 +162,7 @@ export default class RepoUI extends BaseUI {
 			this.openUI(action);
 		}
 
+		this.jumper.render();
 		vats.emitEvent('state-change');
 	}
 };

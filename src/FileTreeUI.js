@@ -10,6 +10,7 @@ import vats from './vats.js';
 import pad from './pad.js';
 import colorscheme from './colorscheme.js';
 import createFileTree from './create-file-tree.js';
+import Loader from './Loader.js';
 import BaseUI from './BaseUI.js';
 import ViStateUI from './ViStateUI.js';
 import CtrlPUI from './CtrlPUI.js';
@@ -208,8 +209,12 @@ export default class FileTreeUI extends BaseUI {
 		if (file.content) {
 			await pager(colorscheme.autoSyntax(file.content, file.path));
 		} else if (!file.content) {
-			this.col3.getBlock('load').content(`Loading ${chalk.blue(file.path)}...`);
+			this.col3.getBlock('load').content('');
+			this.jumper.chain().render().jumpTo('{col-3}l', '{col-3}t').execute();
+			const loader = new Loader(`Loading ${chalk.blue(file.path)}...`);
+			loader.play();
 			const content = await this.loadFileContent(file);
+			loader.end();
 
 			file.content = content;
 			if (this.getSelectedFile() === file) {

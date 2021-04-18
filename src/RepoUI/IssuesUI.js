@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import fetcher from '../fetcher.js';
 import vats from '../vats.js';
 import pad from '../pad.js';
+import Loader from '../Loader.js';
 import ViStateUI from '../ViStateUI.js';
 
 export default class IssuesUI extends ViStateUI {
@@ -12,7 +13,11 @@ export default class IssuesUI extends ViStateUI {
 	}
 
 	async run() {
+		const loader = new Loader('Loading issues...');
+		this.jumper.jumpTo(0, '100%');
+		loader.play();
 		const issues = await (await fetcher.getIssues(this.repoData)).json();
+		loader.end();
 		this.hasFetched = true;
 
 		// TODO: dates

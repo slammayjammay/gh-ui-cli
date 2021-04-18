@@ -4,6 +4,7 @@ import figlet from 'figlet';
 import pad from './pad.js';
 import vats from './vats.js';
 import fetcher from './fetcher.js';
+import Loader from './Loader.js';
 import BaseUI from './BaseUI.js';
 import ViStateUI from './ViStateUI.js';
 
@@ -70,14 +71,15 @@ export default class RepoSearchUI extends BaseUI {
 			return this.end(false);
 		}
 
-		this.jumper.removeBlock('input.prompt');
-		this.jumper.getDivision('header').addBlock(`Searching for ${chalk.bold.blue(query)}...`, 'block');
-		this.jumper.render();
+		this.jumper.getBlock('input.prompt').content('');
+		this.jumper.chain().render().jumpTo('{input}l', '{input}t').execute();
+		const loader = new Loader(`Searching for "${query}"...`);
+		loader.play();
 
 		// const json = await fetcher.searchRepos(query, true);
 		const json = await (await fetcher.searchRepos(query)).json();
 
-		this.jumper.getBlock('header.block').content(`Showing results for ${chalk.bold.blue(query)}:`);
+		loader.end();
 
 		const width = this.resultsUI.div.width();
 		json.items.forEach(item => {
