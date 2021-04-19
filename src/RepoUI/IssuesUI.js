@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import fetcher from '../fetcher.js';
 import vats from '../vats.js';
 import pad from '../pad.js';

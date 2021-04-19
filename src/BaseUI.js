@@ -23,9 +23,9 @@ export default class BaseUI {
 		return new Promise(resolve => this.resolve = resolve);
 	}
 
-	end(data) {
+	end(data, shouldDestroy = true) {
 		this.resolve(data);
-		this.destroy();
+		shouldDestroy ? this.destroy() : this.unfocus();
 	}
 
 	focus() {
@@ -55,6 +55,6 @@ export default class BaseUI {
 
 	destroy() {
 		this.removeFromVats();
-		this.jumper = this.vatsCbs = this.resolve = null;
+		this.jumper = this.vatsCbs = this.resolve = this.isFocused = null;
 	}
 };

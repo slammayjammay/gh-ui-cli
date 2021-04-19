@@ -1,19 +1,19 @@
 import chalk from 'chalk';
 import stringWidth from 'string-width';
 import figlet from 'figlet';
+import pad from '../pad.js';
 import center from '../center.js';
 import vats from '../vats.js';
 import fetcher from '../fetcher.js';
 import createFileTree from '../create-file-tree.js';
 import Loader from '../Loader.js';
 import BaseUI from '../BaseUI.js';
-import SidebarUI from './SidebarUI.js';
+import DialogUI from '../DialogUI.js';
 import FileTreeUI from '../FileTreeUI.js';
 import BranchesUI from './BranchesUI.js';
 import CommitsUI from './CommitsUI.js';
 import IssuesUI from './IssuesUI.js';
 
-// TODO: display current action in header
 const DIVS = {
 	SIDEBAR_PROMPT: { id: 'sidebar-prompt', top: 0, left: 0, overflowX: 'scroll', width: '{sidebar-prompt}nw' },
 	REPO_NAME: { id: 'repo-name', top: '{sidebar-prompt}b', left: 1, width: '100% - 2' },
@@ -34,12 +34,17 @@ export default class RepoUI extends BaseUI {
 		this.sidebarPrompt = this.jumper.addDivision(DIVS.SIDEBAR_PROMPT);
 		this.jumper.getDivision('sidebar-prompt').addBlock(chalk.bgHex('#0d1117').blue.bold(' Tab > '), 'prompt');
 
-		this.sidebarUI = new SidebarUI(this.jumper, DIVS.SIDEBAR, {
+		this.sidebarUI = new DialogUI(this.jumper, DIVS.SIDEBAR, {
 			colorDefault: text => chalk.bgHex('#0d1117').blue.bold(text),
 			colorHighlight: text => chalk.white.bold.bgHex('#21262d')(text)
 		});
+		const width = this.jumper.evaluate('{sidebar}w');
+		['Files', 'Branches', 'Commits', 'Issues', 'Code search', 'Repo search'].forEach(string => {
+			const block = this.sidebarUI.addBlock(this.sidebarUI.options.colorDefault(pad(` ${string} `, width)));
+			block.name = string.toLowerCase();
+		});
+		this.sidebarUI.sync();
 		this.sidebarUI.close();
-		this.sidebarUI.run();
 
 		this.figletName = this.getFigletName();
 		this.jumper.addDivision(DIVS.REPO_NAME);
@@ -50,8 +55,7 @@ export default class RepoUI extends BaseUI {
 		this.hr.addBlock('', 'current-action');
 		this.hr.addBlock(new Array(this.hr.width()).fill(chalk.strikethrough(' ')));
 
-		this.addVatsListener('keypress', 'onKeypress');
-		this.addVatsListener('sidebar-action', 'onSidebarAction');
+		vats.on('keypress', e => this.onKeypress(e));
 		this.addVatsListener('branch-select', 'onBranchSelect');
 	}
 
@@ -151,39 +155,36 @@ export default class RepoUI extends BaseUI {
 	}
 
 	onKeypress({ key }) {
-		if (key.formatted === 'escape' && this.sidebarUI.isFocused) {
+		if (this.sidebarUI.isFocused && ['tab', 'escape'].includes(key.formatted)) {
 			this.sidebarUI.close();
-			this.sidebarUI.unfocus();
+			this.sidebarUI.end(null, false);
 			this.currentUI.focus();
-			this.jumper.render();
-		} else if (key.formatted === 'tab') {
-			if (this.sidebarUI.isFocused) {
-				this.sidebarUI.close();
-				this.sidebarUI.unfocus();
-				this.currentUI.focus();
-			} else {
-				this.currentUI.unfocus();
-				this.sidebarUI.focus();
-				this.sidebarUI.open();
-				vats.emitEvent('state-change');
-			}
-
-			this.jumper.render();
+			vats.emitEvent('state-change');
+		} else if (!this.sidebarUI.isFocused && key.formatted === 'tab') {
+			this.currentUI.unfocus();
+			this.sidebarUI.open();
+			this.sidebarUI.run().then(block => this.onSidebarAction(block));
+			vats.emitEvent('state-change');
 		}
 	}
 
-	onSidebarAction({ action }) {
-		this.sidebarUI.close();
-		this.sidebarUI.unfocus();
+	onSidebarAction(block) {
+		if (!block) {
+			return vats.emitEvent('state-change');
+		}
 
-		if (action === 'repo search') {
+		this.sidebarUI.close();
+		this.sidebarUI.end(null, false);
+		this.currentUI.focus();
+
+		if (block.name === 'repo search') {
 			this.end();
 			return vats.emitEvent('repo-search-select');
 		}
 
-		if (action !== this.currentName) {
+		if (block.name !== this.currentName) {
 			this.currentUI.end();
-			this.openUI(action);
+			this.openUI(block.name);
 		}
 
 		// TODO: remember last selected file
