@@ -9,7 +9,6 @@ import fetcher from './fetcher.js';
 import vats from './vats.js';
 import pad from './pad.js';
 import colorscheme from './colorscheme.js';
-import createFileTree from './create-file-tree.js';
 import Loader from './Loader.js';
 import BaseUI from './BaseUI.js';
 import ViStateUI from './ViStateUI.js';

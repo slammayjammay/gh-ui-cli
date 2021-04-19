@@ -22,11 +22,16 @@ class Program {
 
 		vats.on('command-mode:enter', () => process.stdout.write(escapes.cursorShow));
 		vats.on('command-mode:exit', () => process.stdout.write(escapes.cursorHide));
+		vats.on('repo-search-select', () => this.repoSearch());
 
 		this.run();
 	}
 
-	async run() {
+	run() {
+		return this.repoSearch();
+	}
+
+	async repoSearch() {
 		const repoSearchUI = new RepoSearchUI(this.jumper);
 		repoSearchUI.focus();
 		const repoName = await repoSearchUI.run();

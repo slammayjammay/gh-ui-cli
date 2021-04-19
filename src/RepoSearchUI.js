@@ -1,5 +1,4 @@
 import escapes from 'ansi-escapes';
-import chalk from 'chalk';
 import figlet from 'figlet';
 import pad from './pad.js';
 import vats from './vats.js';

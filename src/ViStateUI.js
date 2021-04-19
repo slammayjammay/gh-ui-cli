@@ -1,4 +1,3 @@
-import Division from '../../terminal-jumper/src/Division.js';
 import vats from './vats.js';
 import colorscheme from './colorscheme.js';
 import BaseUI from './BaseUI.js';

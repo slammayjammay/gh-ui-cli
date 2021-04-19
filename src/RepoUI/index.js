@@ -4,11 +4,9 @@ import figlet from 'figlet';
 import center from '../center.js';
 import vats from '../vats.js';
 import fetcher from '../fetcher.js';
-import colorscheme from '../colorscheme.js';
 import createFileTree from '../create-file-tree.js';
 import Loader from '../Loader.js';
 import BaseUI from '../BaseUI.js';
-import ViStateUI from '../ViStateUI.js';
 import SidebarUI from './SidebarUI.js';
 import FileTreeUI from '../FileTreeUI.js';
 import BranchesUI from './BranchesUI.js';
@@ -36,8 +34,6 @@ export default class RepoUI extends BaseUI {
 		this.sidebarPrompt = this.jumper.addDivision(DIVS.SIDEBAR_PROMPT);
 		this.jumper.getDivision('sidebar-prompt').addBlock(chalk.bgHex('#0d1117').blue.bold(' Tab > '), 'prompt');
 
-		this.jumper.addDivision(DIVS.REPO_NAME);
-
 		this.sidebarUI = new SidebarUI(this.jumper, DIVS.SIDEBAR, {
 			colorDefault: text => chalk.bgHex('#0d1117').blue.bold(text),
 			colorHighlight: text => chalk.white.bold.bgHex('#21262d')(text)
@@ -45,13 +41,14 @@ export default class RepoUI extends BaseUI {
 		this.sidebarUI.close();
 		this.sidebarUI.run();
 
+		this.figletName = this.getFigletName();
+		this.jumper.addDivision(DIVS.REPO_NAME);
+		this.jumper.getDivision('repo-name').addBlock(this.figletName, 'figlet');
+		this.jumper.getDivision('repo-name').addBlock(this.repoName, 'name');
+
 		this.hr = this.jumper.addDivision(DIVS.HR);
 		this.hr.addBlock('', 'current-action');
 		this.hr.addBlock(new Array(this.hr.width()).fill(chalk.strikethrough(' ')));
-
-		this.figletName = this.getFigletName();
-		this.jumper.getDivision('repo-name').addBlock(this.figletName, 'figlet');
-		this.jumper.getDivision('repo-name').addBlock(this.repoName, 'name');
 
 		this.addVatsListener('keypress', 'onKeypress');
 		this.addVatsListener('sidebar-action', 'onSidebarAction');
@@ -92,6 +89,8 @@ export default class RepoUI extends BaseUI {
 		await this.loadFiles(this.repoData.default_branch);
 
 		vats.emitEvent('state-change');
+
+		return super.run();
 	}
 
 	async loadFiles(branch) {
@@ -177,6 +176,11 @@ export default class RepoUI extends BaseUI {
 		this.sidebarUI.close();
 		this.sidebarUI.unfocus();
 
+		if (action === 'repo search') {
+			this.end();
+			return vats.emitEvent('repo-search-select');
+		}
+
 		if (action !== this.currentName) {
 			this.currentUI.end();
 			this.openUI(action);
@@ -195,5 +199,21 @@ export default class RepoUI extends BaseUI {
 		this.currentUI.end();
 		await this.loadFiles(branch);
 		vats.emitEvent('state-change');
+	}
+
+	destroy() {
+		this.currentUI.destroy();
+		this.sidebarUI.destroy();
+
+		['sidebar-prompt', 'repo-name', 'hr'].forEach(id => {
+			const div = this.jumper.getDivision(id);
+			this.jumper.removeDivision(div);
+			div.destroy();
+		});
+
+		this.currentUI = this.sidebarPrompt = this.sidebarUI = this.hr = null;
+		this.repoName = this.repoData = this.figletName = null;
+
+		super.destroy();
 	}
 };
