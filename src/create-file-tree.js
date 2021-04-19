@@ -1,5 +1,6 @@
 class Tree {
 	constructor(files) {
+		this.allFiles = files;
 		this.root = { children: new Map() };
 		this.cache = new Map();
 
@@ -44,6 +45,10 @@ class Tree {
 		};
 
 		traverse(this.root, null);
+	}
+
+	destroy() {
+		this.allFiles = this.root = null;
 	}
 }
 

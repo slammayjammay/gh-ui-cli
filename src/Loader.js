@@ -10,6 +10,10 @@ const DEFAULTS = {
 
 export default class Loader {
 	constructor(text, options = {}) {
+		this.reset(text, options);
+	}
+
+	reset(text, options = {}) {
 		this.text = text;
 		this.options = { ...DEFAULTS, ...options };
 		this.length = stringWidth(this.text);
@@ -37,11 +41,11 @@ export default class Loader {
 		].join('');
 	}
 
-	end() {
+	end(shouldDestroy = true) {
 		clearInterval(this.id);
 		const erase = new Array(this.length).fill(' ').join('');
 		process.stdout.write(escapes.cursorRestorePosition + erase);
-		this.destroy();
+		shouldDestroy && this.destroy();
 	}
 
 	destroy() {

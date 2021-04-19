@@ -55,6 +55,7 @@ export default class RepoUI extends BaseUI {
 
 		this.addVatsListener('keypress', 'onKeypress');
 		this.addVatsListener('sidebar-action', 'onSidebarAction');
+		this.addVatsListener('branch-select', 'onBranchSelect');
 	}
 
 	getFigletName(text = this.repoName) {
@@ -79,38 +80,45 @@ export default class RepoUI extends BaseUI {
 	}
 
 	async run() {
-		const loaderString = 'Loading default branch...';
+		const loaderString = `Loading repo "${this.repoName}"...`;
 		const x = ~~((this.hr.width() - stringWidth(loaderString)) / 2);
 		this.jumper.chain().render().jumpTo(x, '{hr}t').execute();
 		const loader = new Loader(loaderString);
-		loader.play();
 
+		loader.play();
 		this.repoData = await (await fetcher.getRepo(this.repoName)).json();
-		const json = await (await fetcher.getFiles(this.repoData)).json();
+		loader.end();
+
+		await this.loadFiles(this.repoData.default_branch);
+
+		vats.emitEvent('state-change');
+	}
+
+	async loadFiles(branch) {
+		this.repoData.currentBranch = branch;
+
+		if (this.repoData.tree) {
+			this.repoData.tree.destroy();
+		}
+
+		const loaderString = `Loading branch "${branch}"...`;
+		const x = ~~((this.hr.width() - stringWidth(loaderString)) / 2);
+		this.jumper.jumpTo(x, '{hr}t');
+		const loader = new Loader(loaderString);
+
+		loader.play();
+		const json = await (await fetcher.getFiles(this.repoData, branch)).json();
 		loader.end();
 
 		this.repoData.tree = createFileTree(json.tree);
-		this.repoData.tree.allFiles = json.tree;
 		this.openUI('files');
-
-		const readme = this.repoData.tree.allFiles.find(file => /^readme\.md/i.test(file.path));
-		if (!readme) {
-			this.currentUI.cd(this.repoData.tree.root, true);
-		} else {
-			this.currentUI.cdToFile(readme);
-			!readme.content && this.currentUI.loadFileContent(readme).then(content => {
-				readme.content = content;
-				vats.emitEvent('state-change');
-			});
-		}
-
-		vats.emitEvent('state-change');
+		await this.cdToReadme();
 	}
 
 	openUI(action) {
 		this.currentAction = action;
 		if (action === 'files') {
-			this.setCurrentAction(chalk.bold(`Files (${chalk.hex('#43ff43')(this.repoData.default_branch)})`));
+			this.setCurrentAction(chalk.bold(`Files (${chalk.hex('#43ff43')(this.repoData.currentBranch)})`));
 			this.currentUI = new FileTreeUI(this.jumper, DIVS.FILE_UI, this.repoData);
 		} else if (action === 'branches') {
 			this.setCurrentAction(chalk.bold('Branches'));
@@ -128,6 +136,19 @@ export default class RepoUI extends BaseUI {
 
 	setCurrentAction(string) {
 		this.hr.getBlock('current-action').content(center(string, this.hr.width()));
+	}
+
+	async cdToReadme() {
+		const readme = this.repoData.tree.allFiles.find(file => /^readme\.md/i.test(file.path));
+		if (!readme) {
+			this.currentUI.cd(this.repoData.tree.root);
+		} else {
+			this.currentUI.cdToFile(readme);
+			if (!readme.content) {
+				const content = await this.currentUI.loadFileContent(readme);
+				readme.content = content;
+			}
+		}
 	}
 
 	onKeypress({ key }) {
@@ -167,6 +188,12 @@ export default class RepoUI extends BaseUI {
 		}
 
 		this.jumper.render();
+		vats.emitEvent('state-change');
+	}
+
+	async onBranchSelect({ branch }) {
+		this.currentUI.end();
+		await this.loadFiles(branch);
 		vats.emitEvent('state-change');
 	}
 };

@@ -166,7 +166,7 @@ export default class FileTreeUI extends BaseUI {
 	}
 
 	async loadFileContent(file) {
-		const res = await fetcher.getFile(this.repoData, file.path);
+		const res = await fetcher.getFile(this.repoData, file.path, this.repoData.currentBranch || this.repoData.default_branch);
 		const json = await res.json();
 		return Buffer.from(json.content, json.encoding).toString();
 	}

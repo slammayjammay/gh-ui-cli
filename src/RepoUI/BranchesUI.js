@@ -18,7 +18,10 @@ export default class BranchesUI extends ViStateUI {
 		const branches = await (await fetcher.getBranches(this.repoData)).json();
 		loader.end();
 		this.hasFetched = true;
-		branches.forEach(({ name }) => this.div.addBlock(pad(name, this.div.width())));
+		branches.forEach(({ name }) => {
+			const block = this.div.addBlock(pad(name, this.div.width()));
+			block.branch = name;
+		});
 
 		this.sync();
 		vats.emitEvent('state-change');
@@ -32,5 +35,14 @@ export default class BranchesUI extends ViStateUI {
 		}
 
 		super.onStateChange(...arguments);
+	}
+
+	onKeybinding({ kb }) {
+		super.onKeybinding(...arguments);
+
+		if (kb.action.name === 'return') {
+			const { branch } = this.getSelectedBlock();
+			vats.emitEvent('branch-select', { branch });
+		}
 	}
 };

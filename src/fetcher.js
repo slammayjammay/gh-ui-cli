@@ -45,8 +45,9 @@ class Fetcher {
 		return this.fetch(repoData.issues_url.replace('{/number}', ''));
 	}
 
-	getFile(repoData, filePath) {
-		return this.fetch(repoData.contents_url.replace('{+path}', filePath));
+	getFile(repoData, filePath, ref = repoData.default_branch) {
+		const url = repoData.contents_url.replace('{+path}', filePath);
+		return this.fetch(`${url}?ref=${ref}`);
 	}
 
 	getFiles(repoData, sha = repoData.default_branch) {
