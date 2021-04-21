@@ -1,9 +1,9 @@
 import '../dotenv.js';
 import escapes from 'ansi-escapes';
 import 'readline-refresh-line/hijack.js';
-import Jumper from '../../terminal-jumper/src/index.js';
-import VatsPKG from '../../vats/src/index.js';
 import map from './map.js';
+import vats from './vats.js';
+import jumper from './jumper.js';
 import RepoSearchUI from './uis/RepoSearchUI.js';
 import RepoUI from './uis/RepoUI.js';
 import Fetcher from './Fetcher.js';
@@ -12,34 +12,25 @@ import Fetcher from './Fetcher.js';
 // TODO: take url as argument
 class Program {
 	constructor() {
-		// jumper
-		const jumper = new Jumper({ useAlternateScreen: false });
-		jumper.init();
-
-		// vats
-		const { Vats, keybindings } = VatsPKG;
-		keybindings.set('ctrl+p', { name: 'ctrl+p' });
-		const vats = new Vats();
-		vats.on('command-mode:enter', () => process.stdout.write(escapes.cursorShow));
-		vats.on('command-mode:exit', () => process.stdout.write(escapes.cursorHide));
-		vats.on('repo-search-select', () => this.repoSearch());
-
-		// fetcher
-		const fetcher = new Fetcher('slammayjammy', process.env.GH_TOKEN);
-
-		map.set('jumper', jumper);
-		map.set('vats', vats);
-		map.set('fetcher', fetcher);
-
 		this.run();
 	}
 
 	run() {
+		vats.on('command-mode:enter', () => process.stdout.write(escapes.cursorShow));
+		vats.on('command-mode:exit', () => process.stdout.write(escapes.cursorHide));
+		vats.on('repo-search-select', () => this.repoSearch());
+
+		jumper.init();
 		process.stdout.write(escapes.cursorHide);
 		process.on('exit', () => {
 			process.stdout.write(escapes.cursorShow);
 			// jumper.rmcup();
 		});
+
+		// TODO: not this
+		const fetcher = new Fetcher('slammayjammy', process.env.GH_TOKEN);
+		map.set('fetcher', fetcher);
+
 		return this.repoSearch();
 	}
 

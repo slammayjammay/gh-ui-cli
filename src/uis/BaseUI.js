@@ -1,6 +1,6 @@
-import map from '../map.js';
+import vats from '../vats.js';
+import jumper from '../jumper.js';
 
-// TODO: import jumper instead of IV
 export default class BaseUI {
 	constructor() {
 		this.isFocused = false;
@@ -19,7 +19,7 @@ export default class BaseUI {
 	}
 
 	run() {
-		map.get('jumper').render();
+		jumper.render();
 		return new Promise(resolve => this.resolve = resolve);
 	}
 
@@ -29,14 +29,14 @@ export default class BaseUI {
 	}
 
 	focus() {
-		map.get('vats').searcher.clearCache();
+		vats.searcher.clearCache();
 
 		['getViState', 'getSearchableItems', 'getSearchOptions'].forEach(method => {
-			this[method]() && (map.get('vats').options[method] = () => this[method]());
+			this[method]() && (vats.options[method] = () => this[method]());
 		});
 
 		if (!this.isFocused) {
-			this.vatsCbs.forEach(([event, cb]) => map.get('vats').on(event, cb));
+			this.vatsCbs.forEach(([event, cb]) => vats.on(event, cb));
 		}
 		this.isFocused = true;
 	}
@@ -48,9 +48,9 @@ export default class BaseUI {
 
 	removeFromVats() {
 		['getViState', 'getSearchableItems', 'getSearchOptions'].forEach(method => {
-			map.get('vats').options[method] = null;
+			vats.options[method] = null;
 		});
-		this.vatsCbs.forEach(([event, cb]) => map.get('vats').removeListener(event, cb));
+		this.vatsCbs.forEach(([event, cb]) => vats.removeListener(event, cb));
 	}
 
 	destroy() {

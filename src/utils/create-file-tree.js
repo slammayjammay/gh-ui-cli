@@ -53,5 +53,5 @@ class Tree {
 }
 
 export default (files) => {
-	return new Tree(files);
+	return new Tree(files).root;
 };

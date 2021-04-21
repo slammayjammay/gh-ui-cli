@@ -1,4 +1,6 @@
 import map from '../map.js';
+import jumper from '../jumper.js';
+import vats from '../vats.js';
 import pad from '../utils/pad.js';
 import Loader from '../Loader.js';
 import ViStateUI from './ViStateUI.js';
@@ -12,7 +14,7 @@ export default class BranchesUI extends ViStateUI {
 
 	async run() {
 		const loader = new Loader('Loading branches...');
-		map.get('jumper').jumpTo(0, '100%');
+		jumper.jumpTo(0, '100%');
 		loader.play();
 		const branches = await (await map.get('fetcher').getBranches(this.repoData)).json();
 		loader.end();
@@ -23,7 +25,7 @@ export default class BranchesUI extends ViStateUI {
 		});
 
 		this.sync();
-		map.get('vats').emitEvent('state-change');
+		vats.emitEvent('state-change');
 
 		return super.run();
 	}
@@ -41,7 +43,7 @@ export default class BranchesUI extends ViStateUI {
 
 		if (kb.action.name === 'return') {
 			const { branch } = this.getSelectedBlock();
-			map.get('vats').emitEvent('branch-select', { branch });
+			vats.emitEvent('branch-select', { branch });
 		}
 	}
 };

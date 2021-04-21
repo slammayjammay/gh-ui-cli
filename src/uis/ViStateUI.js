@@ -1,4 +1,5 @@
-import map from '../map.js';
+import jumper from '../jumper.js';
+import vats from '../vats.js';
 import colorscheme from '../colorscheme.js';
 import BaseUI from './BaseUI.js';
 
@@ -11,7 +12,7 @@ export default class ViStateUI extends BaseUI {
 	constructor(divOptions, options = {}) {
 		super(divOptions);
 
-		this.div = map.get('jumper').addDivision(divOptions);
+		this.div = jumper.addDivision(divOptions);
 		this.options = { ...DEFAULTS, ...options };
 
 		this.state = {
@@ -76,7 +77,7 @@ export default class ViStateUI extends BaseUI {
 			return accum + this.div.getBlock(id).height();
 		}, 0);
 
-		map.get('vats').viStateHandler.clampState(this.state);
+		vats.viStateHandler.clampState(this.state);
 		this.currentIdx = Math.max(0, Math.min(this.currentIdx, this.state.cursorY))
 
 		this.blocks = this.div.blockIds.map(id => this.div.getBlock(id));
@@ -89,7 +90,7 @@ export default class ViStateUI extends BaseUI {
 			return accum + this.div.getBlock(id).height();
 		}, 0);
 
-		map.get('vats').viStateHandler.clampState(this.state);
+		vats.viStateHandler.clampState(this.state);
 	}
 
 	onKeybinding({ kb }) {
@@ -119,7 +120,7 @@ export default class ViStateUI extends BaseUI {
 			this.div.scrollY(this.state.scrollY + block.height() - 1);
 		}
 
-		map.get('jumper').render();
+		jumper.render();
 	}
 
 	onSearch({ index }) {
@@ -133,8 +134,8 @@ export default class ViStateUI extends BaseUI {
 			return accum + this.div.getBlock(id).height();
 		}, 0);
 
-		const changed = map.get('vats').viStateHandler.setState(this.state, { cursorY });
-		changed && map.get('vats').emitEvent('state-change', { previousState });
+		const changed = vats.viStateHandler.setState(this.state, { cursorY });
+		changed && vats.emitEvent('state-change', { previousState });
 	}
 
 	adjustKbForMultiLine(kb) {
@@ -158,7 +159,7 @@ export default class ViStateUI extends BaseUI {
 	}
 
 	destroy() {
-		map.get('jumper').removeDivision(this.div);
+		jumper.removeDivision(this.div);
 		this.div.destroy();
 		this.div = this.viState = this.currentIdx = null;
 

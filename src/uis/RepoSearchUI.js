@@ -2,6 +2,8 @@ import escapes from 'ansi-escapes';
 import figlet from 'figlet';
 import pad from '../utils/pad.js';
 import map from '../map.js';
+import jumper from '../jumper.js';
+import vats from '../vats.js';
 import Loader from '../Loader.js';
 import BaseUI from './BaseUI.js';
 import ViStateUI from './ViStateUI.js';
@@ -16,22 +18,22 @@ export default class RepoSearchUI extends BaseUI {
 
 		this.resolve = null;
 
-		map.get('jumper').addDivision({
+		jumper.addDivision({
 			id: 'header',
 			top: 0,
 			left: 1,
 			width: '100% - {header}l'
 		});
 		const text = figlet.textSync('Repo Search', { font: 'Calvin S' });
-		map.get('jumper').getDivision('header').addBlock(text, 'header');
+		jumper.getDivision('header').addBlock(text, 'header');
 
-		map.get('jumper').addDivision({
+		jumper.addDivision({
 			id: 'input',
 			top: '100% - 1',
 			left: 1,
 			width: '100% - {input}l'
 		});
-		map.get('jumper').getDivision('input').addBlock(PROMPT, 'prompt');
+		jumper.getDivision('input').addBlock(PROMPT, 'prompt');
 
 		this.resultsUI = new ViStateUI({
 			id: 'results',
@@ -59,8 +61,8 @@ export default class RepoSearchUI extends BaseUI {
 
 		this.resultsUI.div.reset();
 
-		process.stdout.write(map.get('jumper').renderString() + escapes.cursorShow);
-		const query = await map.get('vats').prompt({ prompt: PROMPT });
+		process.stdout.write(jumper.renderString() + escapes.cursorShow);
+		const query = await vats.prompt({ prompt: PROMPT });
 		process.stdout.write(escapes.cursorHide);
 
 		return query;
@@ -71,8 +73,8 @@ export default class RepoSearchUI extends BaseUI {
 			return this.end(false);
 		}
 
-		map.get('jumper').getBlock('input.prompt').content('');
-		map.get('jumper').chain().render().jumpTo('{input}l', '{input}t').execute();
+		jumper.getBlock('input.prompt').content('');
+		jumper.chain().render().jumpTo('{input}l', '{input}t').execute();
 		const loader = new Loader(`Searching for "${query}"...`);
 		loader.play();
 
@@ -92,7 +94,7 @@ export default class RepoSearchUI extends BaseUI {
 			this.resultsUI.addBlock(text + '\n').name = item.full_name;
 		});
 		this.resultsUI.sync();
-		map.get('vats').emitEvent('state-change');
+		vats.emitEvent('state-change');
 	}
 
 	onKeypress({ key }) {
@@ -100,17 +102,17 @@ export default class RepoSearchUI extends BaseUI {
 			this.promptForSearchQuery().then(query => this.fetchRepos(query));
 		} else if (key.formatted === 'return') {
 			const repo = this.resultsUI.getSelectedBlock().name;
-			map.get('jumper').getDivision('input').reset();
+			jumper.getDivision('input').reset();
 			this.resultsUI.div.reset();
-			map.get('jumper').chain().render().jumpTo(0, 0).execute();
+			jumper.chain().render().jumpTo(0, 0).execute();
 			this.end(repo.trim());
 		}
 	}
 
 	destroy() {
 		['header', 'input'].forEach(id => {
-			const div = map.get('jumper').getDivision(id);
-			map.get('jumper').removeDivision(div);
+			const div = jumper.getDivision(id);
+			jumper.removeDivision(div);
 			div.destroy();
 		});
 

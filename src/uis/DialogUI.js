@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import map from '../map.js';
+import jumper from '../jumper.js';
 import center from '../utils/center.js';
 import ViStateUI from './ViStateUI.js';
 
@@ -18,7 +19,7 @@ export default class DialogUI extends ViStateUI {
 	}
 
 	addHeader(text, options = { id: 'dialog-header' }) {
-		this.headerDiv = map.get('jumper').addDivision({
+		this.headerDiv = jumper.addDivision({
 			id: 'dialog-header',
 			top: `{${this.div.options.id}}t - {${options.id}}h`,
 			left: `{${this.div.options.id}}l`,
@@ -34,23 +35,23 @@ export default class DialogUI extends ViStateUI {
 	}
 
 	open() {
-		map.get('jumper').addDivision(this.div);
-		this.headerDiv && map.get('jumper').addDivision(this.headerDiv);
+		jumper.addDivision(this.div);
+		this.headerDiv && jumper.addDivision(this.headerDiv);
 		this.drawBackground();
 		this.focus();
 	}
 
 	close() {
-		map.get('jumper').removeDivision(this.div);
-		this.headerDiv && map.get('jumper').removeDivision(this.headerDiv);
+		jumper.removeDivision(this.div);
+		this.headerDiv && jumper.removeDivision(this.headerDiv);
 	}
 
 	drawBackground() {
 		const fn = () => {
 			const { id } = this.div.options;
-			map.get('jumper').renderInjects.set(`${id}:before:bg`, fn);
+			jumper.renderInjects.set(`${id}:before:bg`, fn);
 
-			return map.get('jumper').fillRectString(
+			return jumper.fillRectString(
 				`{${id}}l`, `{${id}}t`, `{${id}}w`, `{${id}}h`, chalk.bgHex('#0d1117')(' ')
 			);
 		};
@@ -73,7 +74,7 @@ export default class DialogUI extends ViStateUI {
 
 	destroy() {
 		if (this.headerDiv) {
-			map.get('jumper').removeDivision(this.headerDiv);
+			jumper.removeDivision(this.headerDiv);
 			this.headerDiv.destroy();
 			this.headerDiv = null;
 		}

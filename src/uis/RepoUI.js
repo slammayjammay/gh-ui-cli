@@ -4,6 +4,8 @@ import figlet from 'figlet';
 import pad from '../utils/pad.js';
 import center from '../utils/center.js';
 import map from '../map.js';
+import jumper from '../jumper.js';
+import vats from '../vats.js';
 import createFileTree from '../utils/create-file-tree.js';
 import Loader from '../Loader.js';
 import BaseUI from './BaseUI.js';
@@ -30,21 +32,23 @@ export default class RepoUI extends BaseUI {
 
 		this.repoName = repoName;
 
-		this.sidebarPrompt = map.get('jumper').addDivision(DIVS.SIDEBAR_PROMPT);
-		map.get('jumper').getDivision('sidebar-prompt').addBlock(chalk.bgHex('#0d1117').blue.bold(' Tab > '), 'prompt');
+		this.onKeypress = this.onKeypress.bind(this);
+
+		this.sidebarPrompt = jumper.addDivision(DIVS.SIDEBAR_PROMPT);
+		jumper.getDivision('sidebar-prompt').addBlock(chalk.bgHex('#0d1117').blue.bold(' Tab > '), 'prompt');
 
 		this.sidebarUI = null;
 
 		this.figletName = this.getFigletName();
-		map.get('jumper').addDivision(DIVS.REPO_NAME);
-		map.get('jumper').getDivision('repo-name').addBlock(this.figletName, 'figlet');
-		map.get('jumper').getDivision('repo-name').addBlock(this.repoName, 'name');
+		jumper.addDivision(DIVS.REPO_NAME);
+		jumper.getDivision('repo-name').addBlock(this.figletName, 'figlet');
+		jumper.getDivision('repo-name').addBlock(this.repoName, 'name');
 
-		this.hr = map.get('jumper').addDivision(DIVS.HR);
+		this.hr = jumper.addDivision(DIVS.HR);
 		this.hr.addBlock('', 'current-action');
 		this.hr.addBlock(new Array(this.hr.width()).fill(chalk.strikethrough(' ')));
 
-		map.get('vats').on('keypress', e => this.onKeypress(e));
+		vats.on('keypress', this.onKeypress);
 		this.addVatsListener('branch-select', 'onBranchSelect');
 	}
 
@@ -72,7 +76,7 @@ export default class RepoUI extends BaseUI {
 	async run() {
 		const loaderString = `Loading repo "${this.repoName}"...`;
 		const x = ~~((this.hr.width() - stringWidth(loaderString)) / 2);
-		map.get('jumper').chain().render().jumpTo(x, '{hr}t').execute();
+		jumper.chain().render().jumpTo(x, '{hr}t').execute();
 		const loader = new Loader(loaderString);
 
 		loader.play();
@@ -81,28 +85,30 @@ export default class RepoUI extends BaseUI {
 
 		await this.loadFiles(this.repoData.default_branch);
 
-		map.get('vats').emitEvent('state-change');
+		vats.emitEvent('state-change');
 
 		return super.run();
 	}
 
 	async loadFiles(branch) {
-		this.repoData.currentBranch = branch;
+		map.set('currentBranch', branch);
+		// this.repoData.currentBranch = branch;
 
-		if (this.repoData.tree) {
-			this.repoData.tree.destroy();
-		}
+		// if (this.repoData.tree) {
+			// this.repoData.tree.destroy();
+		// }
 
 		const loaderString = `Loading branch "${branch}"...`;
 		const x = ~~((this.hr.width() - stringWidth(loaderString)) / 2);
-		map.get('jumper').jumpTo(x, '{hr}t');
+		jumper.jumpTo(x, '{hr}t');
 		const loader = new Loader(loaderString);
 
 		loader.play();
 		const json = await (await map.get('fetcher').getFiles(this.repoData, branch)).json();
 		loader.end();
 
-		this.repoData.tree = createFileTree(json.tree);
+		map.set('allFiles', json.tree);
+		map.set('tree', createFileTree(json.tree));
 		this.openUI('files');
 		await this.cdToReadme();
 	}
@@ -110,7 +116,8 @@ export default class RepoUI extends BaseUI {
 	openUI(action) {
 		this.currentAction = action;
 		if (action === 'files') {
-			this.setCurrentAction(chalk.bold(`Files (${chalk.hex('#43ff43')(this.repoData.currentBranch)})`));
+			const currentBranch = map.get('currentBranch');
+			this.setCurrentAction(chalk.bold(`Files (${chalk.hex('#43ff43')(currentBranch)})`));
 			this.currentUI = new FileTreeUI(DIVS.FILE_UI, this.repoData);
 		} else if (action === 'branches') {
 			this.setCurrentAction(chalk.bold('Branches'));
@@ -131,9 +138,10 @@ export default class RepoUI extends BaseUI {
 	}
 
 	async cdToReadme() {
-		const readme = this.repoData.tree.allFiles.find(file => /^readme\.md/i.test(file.path));
+		// const readme = this.repoData.tree.allFiles.find(file => /^readme\.md/i.test(file.path));
+		const readme = map.get('allFiles').find(file => /^readme\.md/i.test(file.path));
 		if (!readme) {
-			this.currentUI.cd(this.repoData.tree.root);
+			this.currentUI.cd(map.get('tree'));
 		} else {
 			this.currentUI.cdToFile(readme);
 			if (!readme.content) {
@@ -146,19 +154,19 @@ export default class RepoUI extends BaseUI {
 	onKeypress({ key }) {
 		if (this.sidebarUI && this.sidebarUI.isFocused && key.formatted === 'tab') {
 			this.sidebarUI.end();
-			map.get('vats').emitEvent('state-change');
+			vats.emitEvent('state-change');
 		} else if (key.formatted === 'tab') {
 			this.currentUI.unfocus();
 			this.sidebarUI = this.createSidebar();
 			this.sidebarUI.open();
 			this.sidebarUI.run().then(block => this.onSidebarAction(block));
-			map.get('vats').emitEvent('state-change');
+			vats.emitEvent('state-change');
 		}
 	}
 
 	createSidebar() {
 		const sidebarUI = new DialogUI(DIVS.SIDEBAR);
-		const width = map.get('jumper').evaluate('{sidebar}w');
+		const width = jumper.evaluate('{sidebar}w');
 		['Files', 'Branches', 'Commits', 'Issues', 'Code search', 'Repo search'].forEach(string => {
 			const block = sidebarUI.addBlock(sidebarUI.options.colorDefault(pad(` ${string} `, width)));
 			block.name = string.toLowerCase();
@@ -171,12 +179,12 @@ export default class RepoUI extends BaseUI {
 		this.currentUI.focus();
 
 		if (!block) {
-			return map.get('vats').emitEvent('state-change');
+			return vats.emitEvent('state-change');
 		}
 
 		if (block.name === 'repo search') {
 			this.end();
-			return map.get('vats').emitEvent('repo-search-select');
+			return vats.emitEvent('repo-search-select');
 		}
 
 		if (block.name !== this.currentName) {
@@ -186,25 +194,27 @@ export default class RepoUI extends BaseUI {
 
 		// TODO: remember last selected file
 		if (this.currentAction === 'files') {
-			this.currentUI.cd(this.repoData.tree.root);
+			this.currentUI.cd(map.get('tree'));
 		}
 
-		map.get('jumper').render();
-		map.get('vats').emitEvent('state-change');
+		jumper.render();
+		vats.emitEvent('state-change');
 	}
 
 	async onBranchSelect({ branch }) {
 		this.currentUI.end();
 		await this.loadFiles(branch);
-		map.get('vats').emitEvent('state-change');
+		vats.emitEvent('state-change');
 	}
 
 	destroy() {
 		this.currentUI.destroy();
 
+		vats.removeListener('keypress', this.onKeypress);
+
 		['sidebar-prompt', 'repo-name', 'hr'].forEach(id => {
-			const div = map.get('jumper').getDivision(id);
-			map.get('jumper').removeDivision(div);
+			const div = jumper.getDivision(id);
+			jumper.removeDivision(div);
 			div.destroy();
 		});
 

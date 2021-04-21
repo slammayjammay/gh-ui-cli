@@ -1,6 +1,8 @@
 import escapes from 'ansi-escapes';
 import chalk from 'chalk';
 import map from '../map.js';
+import jumper from '../jumper.js';
+import vats from '../vats.js';
 import pad from '../utils/pad.js';
 import fuzzyFind from '../utils/fuzzy-find.js';
 import BaseUI from './BaseUI.js';
@@ -14,14 +16,14 @@ export default class CtrlPUI extends BaseUI {
 		this.found = [];
 		this.files = this.repoData.tree.allFiles.filter(o => o.type !== 'tree');
 
-		this.div = map.get('jumper').addDivision({
+		this.div = jumper.addDivision({
 			id: 'ctrlp',
 			left: 0,
 			width: '100%',
 			top: '100% - {ctrlp}h - 1'
 		});
 
-		const header = map.get('jumper').addDivision({
+		const header = jumper.addDivision({
 			id: 'ctrlp-header',
 			top: '{ctrlp}t - 1',
 			left: 0,
@@ -33,8 +35,8 @@ export default class CtrlPUI extends BaseUI {
 	}
 
 	async run() {
-		process.stdout.write(escapes.cursorShow + map.get('jumper').jumpTo(0, '{ctrlp}b'));
-		map.get('vats').prompt({ enableKeypressEvents: true, prompt: '>>> ' }).then(input => {
+		process.stdout.write(escapes.cursorShow + jumper.jumpTo(0, '{ctrlp}b'));
+		vats.prompt({ enableKeypressEvents: true, prompt: '>>> ' }).then(input => {
 			if (!input) {
 				return this.end();
 			}
@@ -43,7 +45,7 @@ export default class CtrlPUI extends BaseUI {
 
 		process.nextTick(() => {
 			this.runQuery();
-			map.get('jumper').chain()
+			jumper.chain()
 				.appendToChain(this.div.eraseString({}))
 				.appendToChain(this.div.renderString())
 				.appendToChain(this.renderLineString())
@@ -73,7 +75,7 @@ export default class CtrlPUI extends BaseUI {
 		}
 	}
 
-	runQuery(query = map.get('vats').promptMode.getLine()) {
+	runQuery(query = vats.promptMode.getLine()) {
 		const found = fuzzyFind(this.files, query, {
 			map: item => item.path
 		});
@@ -112,15 +114,15 @@ export default class CtrlPUI extends BaseUI {
 	}
 
 	renderResults() {
-		map.get('jumper').chain().render();
-		map.get('jumper').appendToChain(this.renderLineString());
-		map.get('jumper').execute();
+		jumper.chain().render();
+		jumper.appendToChain(this.renderLineString());
+		jumper.execute();
 	}
 
 	formatPrompt() {
-		const cursor = map.get('vats').promptMode.rl.cursor;
-		const prompt = map.get('vats').promptMode.getPrompt();
-		const line = map.get('vats').promptMode.getLine();
+		const cursor = vats.promptMode.rl.cursor;
+		const prompt = vats.promptMode.getPrompt();
+		const line = vats.promptMode.getLine();
 
 		if (cursor === line.length) {
 			return `${prompt}${line}${chalk.underline(' ')}`;
@@ -131,17 +133,17 @@ export default class CtrlPUI extends BaseUI {
 	}
 
 	renderLineString(line = this.formatPrompt()) {
-		return map.get('jumper').jumpToString(0, '{ctrlp}b') +
+		return jumper.jumpToString(0, '{ctrlp}b') +
 			escapes.eraseLine + line +
-			map.get('jumper').jumpToString(0, `{ctrlp}b - 1 - ${this.currentIdx}`);
+			jumper.jumpToString(0, `{ctrlp}b - 1 - ${this.currentIdx}`);
 	}
 
 	destroy() {
 		process.stdout.write(this.renderLineString(''));
 
-		const header = map.get('jumper').getDivision('ctrlp-header');
-		map.get('jumper').removeDivision(header);
-		map.get('jumper').removeDivision(this.div);
+		const header = jumper.getDivision('ctrlp-header');
+		jumper.removeDivision(header);
+		jumper.removeDivision(this.div);
 		header.destroy();
 		this.div.destroy();
 		this.div = this.currentIdx = this.found = null;

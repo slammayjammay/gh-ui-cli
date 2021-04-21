@@ -6,6 +6,8 @@ import escapes from 'ansi-escapes';
 import chalk from 'chalk';
 import pager from '../utils/pager.js';
 import map from '../map.js';
+import jumper from '../jumper.js';
+import vats from '../vats.js';
 import pad from '../utils/pad.js';
 import colorscheme from '../colorscheme.js';
 import Loader from '../Loader.js';
@@ -15,7 +17,6 @@ import DialogUI from './DialogUI.js';
 import CtrlPUI from './CtrlPUI.js';
 
 // TODO: Use ViStateUI for all columns
-// TODO: Class RepoData or something
 export default class FileTreeUI extends BaseUI {
 	constructor(divOptions, repoData) {
 		super(...arguments);
@@ -24,7 +25,7 @@ export default class FileTreeUI extends BaseUI {
 		this.cache = new Map();
 		this.current = null;
 
-		this.col1 = map.get('jumper').addDivision({
+		this.col1 = jumper.addDivision({
 			id: 'col-1',
 			top: divOptions.top,
 			left: divOptions.left,
@@ -38,7 +39,7 @@ export default class FileTreeUI extends BaseUI {
 			width: `(100% - {col-1}l) * 0.3 - 1`,
 			height: `100% - {col-1}t`
 		}, { colorDefault: this.colorDefault, colorHighlight: this.colorHighlight });
-		this.col3 = map.get('jumper').addDivision({
+		this.col3 = jumper.addDivision({
 			id: 'col-3',
 			top: `{col-2}t`,
 			left: `{col-2}r + 1`,
@@ -82,8 +83,8 @@ export default class FileTreeUI extends BaseUI {
 		this.current = node;
 
 		if (shouldRender) {
-			map.get('vats').emitEvent('state-change');
-			map.get('jumper').render();
+			vats.emitEvent('state-change');
+			jumper.render();
 		}
 	}
 
@@ -152,7 +153,7 @@ export default class FileTreeUI extends BaseUI {
 			this.previewFile(file);
 		}
 
-		map.get('jumper').render();
+		jumper.render();
 	}
 
 	previewFile(file) {
@@ -177,7 +178,7 @@ export default class FileTreeUI extends BaseUI {
 			const height = this.col3.height();
 			const amount = { J: 1, K: -1, F: height, B: -height }[key.formatted];
 			this.col3.scrollDown(amount);
-			map.get('jumper').render();
+			jumper.render();
 		}
 	}
 
@@ -198,9 +199,9 @@ export default class FileTreeUI extends BaseUI {
 
 			ui.run().then(file => {
 				this.focus();
-				file ? this.cdToFile(file) : map.get('jumper').setDirty(this.col1);
-				map.get('jumper').render();
-				map.get('vats').emitEvent('state-change');
+				file ? this.cdToFile(file) : jumper.setDirty(this.col1);
+				jumper.render();
+				vats.emitEvent('state-change');
 			});
 		}
 	}
@@ -212,10 +213,10 @@ export default class FileTreeUI extends BaseUI {
 			this.unfocus();
 			dialog.open();
 			dialog.run().then(block => this.onDialogSelect(block));
-			map.get('vats').emitEvent('state-change');
+			vats.emitEvent('state-change');
 		} else if (!file.content) {
 			this.col3.getBlock('load').content('');
-			map.get('jumper').chain().render().jumpTo('{col-3}l', '{col-3}t').execute();
+			jumper.chain().render().jumpTo('{col-3}l', '{col-3}t').execute();
 			const loader = new Loader(`Loading ${chalk.blue(file.path)}...`);
 			loader.play();
 			const content = await this.loadFileContent(file);
@@ -225,7 +226,7 @@ export default class FileTreeUI extends BaseUI {
 			if (this.getSelectedFile() === file) {
 				this.col3.reset();
 				this.previewFile(file);
-				map.get('jumper').render();
+				jumper.render();
 			}
 		}
 	}
@@ -233,7 +234,7 @@ export default class FileTreeUI extends BaseUI {
 	createDialog() {
 		const dialog = new DialogUI({
 			id: 'dialog',
-			width: 'min(100%, 51)',
+			width: 'min(100%, 50)',
 			height: 'min(100%, 20)',
 			top: '(100% - {dialog}h) / 2',
 			left: '(100% - {dialog}w) / 2'
@@ -250,24 +251,24 @@ export default class FileTreeUI extends BaseUI {
 	async onDialogSelect(block) {
 		this.focus();
 		if (!block) {
-			return map.get('vats').emitEvent('state-change');
+			return vats.emitEvent('state-change');
 		}
 
 		const file = this.getSelectedFile();
 
 		if (block.name === 'Show details') {
 			// TODO: show better details
-			map.get('vats').emitEvent('state-change');
+			vats.emitEvent('state-change');
 			const { parent, children, content, ...obj } = file;
 			await pager(JSON.stringify(obj, null, 2));
 		} else if (block.name === 'Open in less') {
-			map.get('vats').emitEvent('state-change');
+			vats.emitEvent('state-change');
 			await pager(colorscheme.autoSyntax(file.content, file.path));
 		} else if (block.name === 'Open in Vim') {
-			this.openInVim(file).then(() => map.get('vats').emitEvent('state-change'));
+			this.openInVim(file).then(() => vats.emitEvent('state-change'));
 		}
 
-		map.get('vats').emitEvent('state-change');
+		vats.emitEvent('state-change');
 	}
 
 	async onCommand({ argv }) {
@@ -304,7 +305,7 @@ export default class FileTreeUI extends BaseUI {
 
 	destroy() {
 		[this.col1, this.col3].forEach(div => {
-			map.get('jumper').removeDivision(div);
+			jumper.removeDivision(div);
 			div.destroy();
 		});
 		this.col2.destroy();

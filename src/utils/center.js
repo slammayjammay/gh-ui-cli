@@ -1,5 +1,6 @@
 import stringWidth from 'string-width';
 
+// TODO: ensure string width matches maxWidth
 export default (string, maxWidth) => {
 	const width = stringWidth(string);
 
