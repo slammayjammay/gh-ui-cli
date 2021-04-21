@@ -1,8 +1,8 @@
 import escapes from 'ansi-escapes';
 import chalk from 'chalk';
-import vats from './vats.js';
-import pad from './pad.js';
-import fuzzyFind from './fuzzy-find.js';
+import vats from '../vats.js';
+import pad from '../utils/pad.js';
+import fuzzyFind from '../utils/fuzzy-find.js';
 import BaseUI from './BaseUI.js';
 
 export default class CtrlPUI extends BaseUI {

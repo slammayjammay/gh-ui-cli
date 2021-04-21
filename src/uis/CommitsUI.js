@@ -1,8 +1,8 @@
 import fetcher from '../fetcher.js';
 import vats from '../vats.js';
-import pad from '../pad.js';
+import pad from '../utils/pad.js';
 import Loader from '../Loader.js';
-import ViStateUI from '../ViStateUI.js';
+import ViStateUI from './ViStateUI.js';
 
 export default class CommitsUI extends ViStateUI {
 	constructor(jumper, divOptions, repoData) {

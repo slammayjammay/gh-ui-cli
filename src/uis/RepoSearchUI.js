@@ -1,14 +1,15 @@
 import escapes from 'ansi-escapes';
 import figlet from 'figlet';
-import pad from './pad.js';
-import vats from './vats.js';
-import fetcher from './fetcher.js';
-import Loader from './Loader.js';
+import pad from '../utils/pad.js';
+import vats from '../vats.js';
+import fetcher from '../fetcher.js';
+import Loader from '../Loader.js';
 import BaseUI from './BaseUI.js';
 import ViStateUI from './ViStateUI.js';
 
 const PROMPT = ' Enter a repo name > ';
 
+// TODO: no results error?
 // TODO: cancel requests
 export default class RepoSearchUI extends BaseUI {
 	constructor() {

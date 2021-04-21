@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import center from './center.js';
+import center from '../utils/center.js';
 import ViStateUI from './ViStateUI.js';
 
 const DEFAULTS = {

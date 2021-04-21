@@ -4,9 +4,10 @@ import 'readline-refresh-line/hijack.js';
 import Jumper from '../../terminal-jumper/src/index.js';
 import fetcher from './fetcher.js';
 import vats from './vats.js';
-import RepoSearchUI from './RepoSearchUI.js';
-import RepoUI from './RepoUI/index.js';
+import RepoSearchUI from './uis/RepoSearchUI.js';
+import RepoUI from './uis/RepoUI.js';
 
+// TODO: export classes instead of singletons
 // TODO: global commands: "help", "render"
 // TODO: take url as argument
 class Program {

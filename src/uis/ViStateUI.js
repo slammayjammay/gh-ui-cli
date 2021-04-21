@@ -1,5 +1,5 @@
-import vats from './vats.js';
-import colorscheme from './colorscheme.js';
+import vats from '../vats.js';
+import colorscheme from '../colorscheme.js';
 import BaseUI from './BaseUI.js';
 
 const DEFAULTS = {

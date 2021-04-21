@@ -1,4 +1,4 @@
-import vats from './vats.js';
+import vats from '../vats.js';
 
 // TODO: import jumper instead of IV
 export default class BaseUI {
