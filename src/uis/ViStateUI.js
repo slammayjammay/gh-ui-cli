@@ -1,4 +1,4 @@
-import vats from '../vats.js';
+import map from '../map.js';
 import colorscheme from '../colorscheme.js';
 import BaseUI from './BaseUI.js';
 
@@ -8,10 +8,10 @@ const DEFAULTS = {
 };
 
 export default class ViStateUI extends BaseUI {
-	constructor(jumper, divOptions, options = {}) {
-		super(jumper);
+	constructor(divOptions, options = {}) {
+		super(divOptions);
 
-		this.div = this.jumper.addDivision(divOptions);
+		this.div = map.get('jumper').addDivision(divOptions);
 		this.options = { ...DEFAULTS, ...options };
 
 		this.state = {
@@ -76,7 +76,7 @@ export default class ViStateUI extends BaseUI {
 			return accum + this.div.getBlock(id).height();
 		}, 0);
 
-		vats.viStateHandler.clampState(this.state);
+		map.get('vats').viStateHandler.clampState(this.state);
 		this.currentIdx = Math.max(0, Math.min(this.currentIdx, this.state.cursorY))
 
 		this.blocks = this.div.blockIds.map(id => this.div.getBlock(id));
@@ -89,7 +89,7 @@ export default class ViStateUI extends BaseUI {
 			return accum + this.div.getBlock(id).height();
 		}, 0);
 
-		vats.viStateHandler.clampState(this.state);
+		map.get('vats').viStateHandler.clampState(this.state);
 	}
 
 	onKeybinding({ kb }) {
@@ -119,7 +119,7 @@ export default class ViStateUI extends BaseUI {
 			this.div.scrollY(this.state.scrollY + block.height() - 1);
 		}
 
-		this.jumper.render();
+		map.get('jumper').render();
 	}
 
 	onSearch({ index }) {
@@ -133,8 +133,8 @@ export default class ViStateUI extends BaseUI {
 			return accum + this.div.getBlock(id).height();
 		}, 0);
 
-		const changed = vats.viStateHandler.setState(this.state, { cursorY });
-		changed && vats.emitEvent('state-change', { previousState });
+		const changed = map.get('vats').viStateHandler.setState(this.state, { cursorY });
+		changed && map.get('vats').emitEvent('state-change', { previousState });
 	}
 
 	adjustKbForMultiLine(kb) {
@@ -158,7 +158,7 @@ export default class ViStateUI extends BaseUI {
 	}
 
 	destroy() {
-		this.jumper.removeDivision(this.div);
+		map.get('jumper').removeDivision(this.div);
 		this.div.destroy();
 		this.div = this.viState = this.currentIdx = null;
 

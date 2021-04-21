@@ -1,8 +1,7 @@
 import escapes from 'ansi-escapes';
 import figlet from 'figlet';
 import pad from '../utils/pad.js';
-import vats from '../vats.js';
-import fetcher from '../fetcher.js';
+import map from '../map.js';
 import Loader from '../Loader.js';
 import BaseUI from './BaseUI.js';
 import ViStateUI from './ViStateUI.js';
@@ -17,24 +16,24 @@ export default class RepoSearchUI extends BaseUI {
 
 		this.resolve = null;
 
-		this.jumper.addDivision({
+		map.get('jumper').addDivision({
 			id: 'header',
 			top: 0,
 			left: 1,
 			width: '100% - {header}l'
 		});
 		const text = figlet.textSync('Repo Search', { font: 'Calvin S' });
-		this.jumper.getDivision('header').addBlock(text, 'header');
+		map.get('jumper').getDivision('header').addBlock(text, 'header');
 
-		this.jumper.addDivision({
+		map.get('jumper').addDivision({
 			id: 'input',
 			top: '100% - 1',
 			left: 1,
 			width: '100% - {input}l'
 		});
-		this.jumper.getDivision('input').addBlock(PROMPT, 'prompt');
+		map.get('jumper').getDivision('input').addBlock(PROMPT, 'prompt');
 
-		this.resultsUI = new ViStateUI(this.jumper, {
+		this.resultsUI = new ViStateUI({
 			id: 'results',
 			top: '{header}b + 1',
 			left: '{header}l',
@@ -60,8 +59,8 @@ export default class RepoSearchUI extends BaseUI {
 
 		this.resultsUI.div.reset();
 
-		process.stdout.write(this.jumper.renderString() + escapes.cursorShow);
-		const query = await vats.prompt({ prompt: PROMPT });
+		process.stdout.write(map.get('jumper').renderString() + escapes.cursorShow);
+		const query = await map.get('vats').prompt({ prompt: PROMPT });
 		process.stdout.write(escapes.cursorHide);
 
 		return query;
@@ -72,13 +71,13 @@ export default class RepoSearchUI extends BaseUI {
 			return this.end(false);
 		}
 
-		this.jumper.getBlock('input.prompt').content('');
-		this.jumper.chain().render().jumpTo('{input}l', '{input}t').execute();
+		map.get('jumper').getBlock('input.prompt').content('');
+		map.get('jumper').chain().render().jumpTo('{input}l', '{input}t').execute();
 		const loader = new Loader(`Searching for "${query}"...`);
 		loader.play();
 
-		// const json = await fetcher.searchRepos(query, true);
-		const json = await (await fetcher.searchRepos(query)).json();
+		// const json = await map.get('fetcher').searchRepos(query, true);
+		const json = await (await map.get('fetcher').searchRepos(query)).json();
 
 		loader.end();
 
@@ -93,7 +92,7 @@ export default class RepoSearchUI extends BaseUI {
 			this.resultsUI.addBlock(text + '\n').name = item.full_name;
 		});
 		this.resultsUI.sync();
-		vats.emitEvent('state-change');
+		map.get('vats').emitEvent('state-change');
 	}
 
 	onKeypress({ key }) {
@@ -101,17 +100,17 @@ export default class RepoSearchUI extends BaseUI {
 			this.promptForSearchQuery().then(query => this.fetchRepos(query));
 		} else if (key.formatted === 'return') {
 			const repo = this.resultsUI.getSelectedBlock().name;
-			this.jumper.getDivision('input').reset();
+			map.get('jumper').getDivision('input').reset();
 			this.resultsUI.div.reset();
-			this.jumper.chain().render().jumpTo(0, 0).execute();
+			map.get('jumper').chain().render().jumpTo(0, 0).execute();
 			this.end(repo.trim());
 		}
 	}
 
 	destroy() {
 		['header', 'input'].forEach(id => {
-			const div = this.jumper.getDivision(id);
-			this.jumper.removeDivision(div);
+			const div = map.get('jumper').getDivision(id);
+			map.get('jumper').removeDivision(div);
 			div.destroy();
 		});
 

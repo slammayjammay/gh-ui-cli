@@ -1,21 +1,20 @@
-import fetcher from '../fetcher.js';
-import vats from '../vats.js';
+import map from '../map.js';
 import pad from '../utils/pad.js';
 import Loader from '../Loader.js';
 import ViStateUI from './ViStateUI.js';
 
 export default class BranchesUI extends ViStateUI {
-	constructor(jumper, divOptions, repoData) {
-		super(jumper, divOptions);
+	constructor(divOptions, repoData) {
+		super(divOptions);
 		this.repoData = repoData;
 		this.hasFetched = false;
 	}
 
 	async run() {
 		const loader = new Loader('Loading branches...');
-		this.jumper.jumpTo(0, '100%');
+		map.get('jumper').jumpTo(0, '100%');
 		loader.play();
-		const branches = await (await fetcher.getBranches(this.repoData)).json();
+		const branches = await (await map.get('fetcher').getBranches(this.repoData)).json();
 		loader.end();
 		this.hasFetched = true;
 		branches.forEach(({ name }) => {
@@ -24,7 +23,7 @@ export default class BranchesUI extends ViStateUI {
 		});
 
 		this.sync();
-		vats.emitEvent('state-change');
+		map.get('vats').emitEvent('state-change');
 
 		return super.run();
 	}
@@ -42,7 +41,7 @@ export default class BranchesUI extends ViStateUI {
 
 		if (kb.action.name === 'return') {
 			const { branch } = this.getSelectedBlock();
-			vats.emitEvent('branch-select', { branch });
+			map.get('vats').emitEvent('branch-select', { branch });
 		}
 	}
 };

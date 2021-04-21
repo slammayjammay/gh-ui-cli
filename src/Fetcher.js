@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-class Fetcher {
+export default class Fetcher {
 	constructor(username, token) {
 		if (username && token) {
 			this.auth = this.createAuth(username, token);
@@ -58,5 +58,3 @@ class Fetcher {
 		this.auth = null;
 	}
 };
-
-export default new Fetcher('slammayjammy', process.env.GH_TOKEN);
