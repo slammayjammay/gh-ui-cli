@@ -12,9 +12,11 @@ import colorscheme from './colorscheme.js';
 import Loader from './Loader.js';
 import BaseUI from './BaseUI.js';
 import ViStateUI from './ViStateUI.js';
+import DialogUI from './DialogUI.js';
 import CtrlPUI from './CtrlPUI.js';
 
 // TODO: Use ViStateUI for all columns
+// TODO: Class RepoData or something
 export default class FileTreeUI extends BaseUI {
 	constructor(jumper, divOptions, repoData) {
 		super(...arguments);
@@ -206,7 +208,12 @@ export default class FileTreeUI extends BaseUI {
 
 	async onSelectFile(file) {
 		if (file.content) {
-			await pager(colorscheme.autoSyntax(file.content, file.path));
+			const dialog = this.createDialog();
+			dialog.addHeader(file.path);
+			this.unfocus();
+			dialog.open();
+			dialog.run().then(block => this.onDialogSelect(block));
+			vats.emitEvent('state-change');
 		} else if (!file.content) {
 			this.col3.getBlock('load').content('');
 			this.jumper.chain().render().jumpTo('{col-3}l', '{col-3}t').execute();
@@ -224,6 +231,46 @@ export default class FileTreeUI extends BaseUI {
 		}
 	}
 
+	createDialog() {
+		const dialog = new DialogUI(this.jumper, {
+			id: 'dialog',
+			width: 'min(100%, 51)',
+			height: 'min(100%, 20)',
+			top: '(100% - {dialog}h) / 2',
+			left: '(100% - {dialog}w) / 2'
+		});
+		const width = dialog.div.width();
+		['Show details', 'Open in less', 'Open in Vim'].forEach(string => {
+			const block = dialog.addBlock(dialog.options.colorDefault(pad(` ${string} `, width)));
+			block.name = string;
+		});
+		dialog.sync();
+		return dialog;
+	}
+
+	async onDialogSelect(block) {
+		this.focus();
+		if (!block) {
+			return vats.emitEvent('state-change');
+		}
+
+		const file = this.getSelectedFile();
+
+		if (block.name === 'Show details') {
+			// TODO: show better details
+			vats.emitEvent('state-change');
+			const { parent, children, content, ...obj } = file;
+			await pager(JSON.stringify(obj, null, 2));
+		} else if (block.name === 'Open in less') {
+			vats.emitEvent('state-change');
+			await pager(colorscheme.autoSyntax(file.content, file.path));
+		} else if (block.name === 'Open in Vim') {
+			this.openInVim(file).then(() => vats.emitEvent('state-change'));
+		}
+
+		vats.emitEvent('state-change');
+	}
+
 	async onCommand({ argv }) {
 		const command = argv._[0];
 		const file = this.getSelectedFile();
@@ -233,9 +280,13 @@ export default class FileTreeUI extends BaseUI {
 			await pager(colorscheme.autoSyntax(file.content, file.path));
 		} else if (command === 'vim' && file.type !== 'tree') {
 			file.content = file.content || (await this.loadFileContent(file));
+			this.openInVim(file);
+		}
+	}
 
+	openInVim(file) {
+		return new Promise(resolve => {
 			const name = file.path.replace(/\//g, '_');
-
 			tmp.file({ name }, (err, path, fd, done) => {
 				if (err) {
 					throw err;
@@ -247,8 +298,9 @@ export default class FileTreeUI extends BaseUI {
 				process.stdout.write(escapes.cursorHide);
 
 				done();
+				resolve();
 			});
-		}
+		});
 	}
 
 	destroy() {

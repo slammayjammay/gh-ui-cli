@@ -34,17 +34,7 @@ export default class RepoUI extends BaseUI {
 		this.sidebarPrompt = this.jumper.addDivision(DIVS.SIDEBAR_PROMPT);
 		this.jumper.getDivision('sidebar-prompt').addBlock(chalk.bgHex('#0d1117').blue.bold(' Tab > '), 'prompt');
 
-		this.sidebarUI = new DialogUI(this.jumper, DIVS.SIDEBAR, {
-			colorDefault: text => chalk.bgHex('#0d1117').blue.bold(text),
-			colorHighlight: text => chalk.white.bold.bgHex('#21262d')(text)
-		});
-		const width = this.jumper.evaluate('{sidebar}w');
-		['Files', 'Branches', 'Commits', 'Issues', 'Code search', 'Repo search'].forEach(string => {
-			const block = this.sidebarUI.addBlock(this.sidebarUI.options.colorDefault(pad(` ${string} `, width)));
-			block.name = string.toLowerCase();
-		});
-		this.sidebarUI.sync();
-		this.sidebarUI.close();
+		this.sidebarUI = null;
 
 		this.figletName = this.getFigletName();
 		this.jumper.addDivision(DIVS.REPO_NAME);
@@ -155,27 +145,35 @@ export default class RepoUI extends BaseUI {
 	}
 
 	onKeypress({ key }) {
-		if (this.sidebarUI.isFocused && ['tab', 'escape'].includes(key.formatted)) {
-			this.sidebarUI.close();
-			this.sidebarUI.end(null, false);
-			this.currentUI.focus();
+		if (this.sidebarUI && this.sidebarUI.isFocused && key.formatted === 'tab') {
+			this.sidebarUI.end();
 			vats.emitEvent('state-change');
-		} else if (!this.sidebarUI.isFocused && key.formatted === 'tab') {
+		} else if (key.formatted === 'tab') {
 			this.currentUI.unfocus();
+			this.sidebarUI = this.createSidebar();
 			this.sidebarUI.open();
 			this.sidebarUI.run().then(block => this.onSidebarAction(block));
 			vats.emitEvent('state-change');
 		}
 	}
 
+	createSidebar() {
+		const sidebarUI = new DialogUI(this.jumper, DIVS.SIDEBAR);
+		const width = this.jumper.evaluate('{sidebar}w');
+		['Files', 'Branches', 'Commits', 'Issues', 'Code search', 'Repo search'].forEach(string => {
+			const block = sidebarUI.addBlock(sidebarUI.options.colorDefault(pad(` ${string} `, width)));
+			block.name = string.toLowerCase();
+		});
+		sidebarUI.sync();
+		return sidebarUI;
+	}
+
 	onSidebarAction(block) {
+		this.currentUI.focus();
+
 		if (!block) {
 			return vats.emitEvent('state-change');
 		}
-
-		this.sidebarUI.close();
-		this.sidebarUI.end(null, false);
-		this.currentUI.focus();
 
 		if (block.name === 'repo search') {
 			this.end();
