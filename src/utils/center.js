@@ -1,6 +1,5 @@
 import stringWidth from 'string-width';
 
-// TODO: ensure string width matches maxWidth
 export default (string, maxWidth) => {
 	const width = stringWidth(string);
 
@@ -8,6 +7,9 @@ export default (string, maxWidth) => {
 		return string;
 	}
 
-	const padding = new Array(~~((maxWidth - width) / 2)).fill(' ').join('');
-	return `${padding}${string}${padding}`;
+	const paddingAmount = ~~((maxWidth - width) / 2);
+	const needsMore = width + paddingAmount * 2 < maxWidth;
+
+	const padding = new Array(paddingAmount).fill(' ').join('');
+	return `${padding}${string}${padding}${needsMore ? ' ' : ''}`;
 };
