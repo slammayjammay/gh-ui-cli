@@ -49,7 +49,9 @@ class Program {
 	}
 
 	destroy() {
-		['jumper', 'vats', 'fetcher'].forEach(key => map.get(key).destroy());
+		jumper.destroy();
+		vats.destroy();
+		map.get('fetcher').destroy();
 		map.clear();
 		process.exit();
 	}
