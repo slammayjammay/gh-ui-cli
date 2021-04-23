@@ -163,13 +163,30 @@ export default class FileTreeUI extends BaseUI {
 			return this.col3.addBlock(colorscheme.autoSyntax(file.content, file.path));
 		}
 
-		this.col3.addBlock(`Press ${chalk.bold('enter')} to load ${chalk.blue(file.path)}.`, 'load');
+		this.col3.addBlock(`Press ${chalk.yellow('ctrl+l')} to load ${chalk.blue(file.path)}.`, 'load');
 	}
 
 	async loadFileContent(file) {
-		const res = await map.get('fetcher').getFile(this.repoData, file.path, this.repoData.currentBranch || this.repoData.default_branch);
+		const res = await map.get('fetcher').getFile(this.repoData, file.path, map.get('branch') || this.repoData.default_branch);
 		const json = await res.json();
 		return Buffer.from(json.content, json.encoding).toString();
+	}
+
+	async loadSelectedFile() {
+		const file = this.getSelectedFile();
+		this.col3.getBlock('load').content('');
+		jumper.chain().render().jumpTo('{col-3}l', '{col-3}t').execute();
+		const loader = new Loader(`Loading ${chalk.blue(file.path)}...`);
+		loader.play();
+		const content = await this.loadFileContent(file);
+		loader.end();
+
+		file.content = content;
+		if (this.getSelectedFile() === file) {
+			this.col3.reset();
+			this.previewFile(file);
+			jumper.render();
+		}
 	}
 
 	onKeypress({ key }) {
@@ -179,6 +196,8 @@ export default class FileTreeUI extends BaseUI {
 			const amount = { J: 1, K: -1, F: height, B: -height }[key.formatted];
 			this.col3.scrollDown(amount);
 			jumper.render();
+		} else if (key.formatted === 'ctrl+l' && !file.content) {
+			this.loadSelectedFile();
 		}
 	}
 
@@ -207,31 +226,15 @@ export default class FileTreeUI extends BaseUI {
 	}
 
 	async onSelectFile(file) {
-		if (file.content) {
-			const dialog = this.createDialog();
-			dialog.addHeader(file.path);
-			this.unfocus();
-			dialog.open();
-			dialog.run().then(block => this.onDialogSelect(block));
-			vats.emitEvent('state-change');
-		} else if (!file.content) {
-			this.col3.getBlock('load').content('');
-			jumper.chain().render().jumpTo('{col-3}l', '{col-3}t').execute();
-			const loader = new Loader(`Loading ${chalk.blue(file.path)}...`);
-			loader.play();
-			const content = await this.loadFileContent(file);
-			loader.end();
-
-			file.content = content;
-			if (this.getSelectedFile() === file) {
-				this.col3.reset();
-				this.previewFile(file);
-				jumper.render();
-			}
-		}
+		const dialog = this.createDialog(file);
+		dialog.addHeader(file.path);
+		this.unfocus();
+		dialog.open();
+		dialog.run().then(block => this.onDialogSelect(block));
+		vats.emitEvent('state-change');
 	}
 
-	createDialog() {
+	createDialog(file) {
 		const dialog = new DialogUI({
 			id: 'dialog',
 			width: 'min(100%, 50)',
@@ -240,7 +243,9 @@ export default class FileTreeUI extends BaseUI {
 			left: '(100% - {dialog}w) / 2'
 		});
 		const width = dialog.div.width();
-		['Show details', 'Open in less', 'Open in Vim'].forEach(string => {
+		const actions = ['Show details', 'Open in less', 'Open in Vim'];
+		!file.content && actions.unshift('Load content');
+		actions.forEach(string => {
 			const block = dialog.addBlock(dialog.options.colorDefault(pad(` ${string} `, width)));
 			block.name = string;
 		});
@@ -256,8 +261,9 @@ export default class FileTreeUI extends BaseUI {
 
 		const file = this.getSelectedFile();
 
-		if (block.name === 'Show details') {
-			// TODO: show better details
+		if (block.name === 'Load content') {
+			await this.loadSelectedFile();
+		} else if (block.name === 'Show details') {
 			vats.emitEvent('state-change');
 			const { parent, children, content, ...obj } = file;
 			await pager(JSON.stringify(obj, null, 2));

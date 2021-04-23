@@ -103,7 +103,7 @@ export default class RepoUI extends BaseUI {
 
 		map.set('allFiles', json.tree);
 		map.set('tree', createFileTree(json.tree));
-		this.branch = branch;
+		map.set('branch', branch);
 		this.openUI('files');
 		await this.cdToReadme();
 	}
@@ -111,7 +111,7 @@ export default class RepoUI extends BaseUI {
 	openUI(action) {
 		this.currentAction = action;
 		if (action === 'files') {
-			this.setCurrentAction(chalk.bold(`Files (${chalk.hex('#43ff43')(this.branch)})`));
+			this.setCurrentAction(chalk.bold(`Files (${chalk.hex('#43ff43')(map.get('branch'))})`));
 			this.currentUI = new FileTreeUI(DIVS.FILE_UI, this.repoData);
 		} else if (action === 'branches') {
 			this.setCurrentAction(chalk.bold('Branches'));
