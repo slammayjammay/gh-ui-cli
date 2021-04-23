@@ -1,3 +1,4 @@
+import { parse } from 'url';
 import escapes from 'ansi-escapes';
 import figlet from 'figlet';
 import pad from '../utils/pad.js';
@@ -8,7 +9,7 @@ import Loader from '../Loader.js';
 import BaseUI from './BaseUI.js';
 import ViStateUI from './ViStateUI.js';
 
-const PROMPT = ' Enter a repo name > ';
+const PROMPT = ' Enter a repo name or URL > ';
 
 // TODO: no results error?
 // TODO: cancel requests
@@ -73,6 +74,11 @@ export default class RepoSearchUI extends BaseUI {
 			return this.end(false);
 		}
 
+		const isUrl = /^https:\/\//.test(query);
+		if (isUrl) {
+			return this.end(this.parseUrl(query));
+		}
+
 		jumper.getBlock('input.prompt').content('');
 		jumper.chain().render().jumpTo('{input}l', '{input}t').execute();
 		const loader = new Loader(`Searching for "${query}"...`);
@@ -105,8 +111,19 @@ export default class RepoSearchUI extends BaseUI {
 			jumper.getDivision('input').reset();
 			this.resultsUI.div.reset();
 			jumper.chain().render().jumpTo(0, 0).execute();
-			this.end(repo.trim());
+			this.end({ repoName: repo.trim() });
 		}
+	}
+
+	parseUrl(url) {
+		const { pathname } = parse(url);
+		const match = /\/([^\/]+\/[^\/]+)(?:\/tree\/([^\/]+))?/.exec(pathname);
+		if (!match) {
+			throw new Error(`Unable to parse url "${url}".`);
+		}
+
+		const [_, repoName, branch] = match;
+		return { repoName, branch };
 	}
 
 	destroy() {

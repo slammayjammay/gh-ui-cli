@@ -27,10 +27,11 @@ const DIVS = {
 };
 
 export default class RepoUI extends BaseUI {
-	constructor(repoName) {
+	constructor(repoName, branch) {
 		super();
 
 		this.repoName = repoName;
+		this.branch = branch;
 
 		this.onKeypress = this.onKeypress.bind(this);
 
@@ -83,7 +84,7 @@ export default class RepoUI extends BaseUI {
 		this.repoData = await (await map.get('fetcher').getRepo(this.repoName)).json();
 		loader.end();
 
-		await this.loadFiles(this.repoData.default_branch);
+		await this.loadFiles(this.branch || this.repoData.default_branch);
 
 		vats.emitEvent('state-change');
 
@@ -91,13 +92,6 @@ export default class RepoUI extends BaseUI {
 	}
 
 	async loadFiles(branch) {
-		map.set('currentBranch', branch);
-		// this.repoData.currentBranch = branch;
-
-		// if (this.repoData.tree) {
-			// this.repoData.tree.destroy();
-		// }
-
 		const loaderString = `Loading branch "${branch}"...`;
 		const x = ~~((this.hr.width() - stringWidth(loaderString)) / 2);
 		jumper.jumpTo(x, '{hr}t');
@@ -109,6 +103,7 @@ export default class RepoUI extends BaseUI {
 
 		map.set('allFiles', json.tree);
 		map.set('tree', createFileTree(json.tree));
+		this.branch = branch;
 		this.openUI('files');
 		await this.cdToReadme();
 	}
@@ -116,8 +111,7 @@ export default class RepoUI extends BaseUI {
 	openUI(action) {
 		this.currentAction = action;
 		if (action === 'files') {
-			const currentBranch = map.get('currentBranch');
-			this.setCurrentAction(chalk.bold(`Files (${chalk.hex('#43ff43')(currentBranch)})`));
+			this.setCurrentAction(chalk.bold(`Files (${chalk.hex('#43ff43')(this.branch)})`));
 			this.currentUI = new FileTreeUI(DIVS.FILE_UI, this.repoData);
 		} else if (action === 'branches') {
 			this.setCurrentAction(chalk.bold('Branches'));
@@ -138,7 +132,6 @@ export default class RepoUI extends BaseUI {
 	}
 
 	async cdToReadme() {
-		// const readme = this.repoData.tree.allFiles.find(file => /^readme\.md/i.test(file.path));
 		const readme = map.get('allFiles').find(file => /^readme\.md/i.test(file.path));
 		if (!readme) {
 			this.currentUI.cd(map.get('tree'));

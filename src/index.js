@@ -9,13 +9,13 @@ import RepoUI from './uis/RepoUI.js';
 import Fetcher from './Fetcher.js';
 
 // TODO: global commands: "help", "render"
-// TODO: take url as argument
 class Program {
 	constructor() {
-		this.run();
+		this.setup();
+		this.repoSearch();
 	}
 
-	run() {
+	setup() {
 		vats.on('command-mode:enter', () => process.stdout.write(escapes.cursorShow));
 		vats.on('command-mode:exit', () => process.stdout.write(escapes.cursorHide));
 		vats.on('repo-search-select', () => this.repoSearch());
@@ -30,20 +30,18 @@ class Program {
 		// TODO: not this
 		const fetcher = new Fetcher('slammayjammy', process.env.GH_TOKEN);
 		map.set('fetcher', fetcher);
-
-		return this.repoSearch();
 	}
 
 	async repoSearch() {
 		const repoSearchUI = new RepoSearchUI();
 		repoSearchUI.focus();
-		const repoName = await repoSearchUI.run();
+		const data = await repoSearchUI.run();
 
-		if (!repoName) {
+		if (!data) {
 			return this.destroy();
 		}
 
-		const repoUI = new RepoUI(repoName);
+		const repoUI = new RepoUI(data.repoName, data.branch);
 		repoUI.focus();
 		repoUI.run();
 	}
