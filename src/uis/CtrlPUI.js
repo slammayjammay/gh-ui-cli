@@ -14,7 +14,7 @@ export default class CtrlPUI extends BaseUI {
 
 		this.currentIdx = 0;
 		this.found = [];
-		this.files = this.repoData.tree.allFiles.filter(o => o.type !== 'tree');
+		this.files = map.get('allFiles').filter(o => o.type !== 'tree');
 
 		this.div = jumper.addDivision({
 			id: 'ctrlp',
