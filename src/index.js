@@ -1,4 +1,3 @@
-import '../dotenv.js';
 import escapes from 'ansi-escapes';
 import 'readline-refresh-line/hijack.js';
 import map from './map.js';
@@ -11,11 +10,15 @@ import Fetcher from './Fetcher.js';
 // TODO: global commands: "help", "render"
 class Program {
 	constructor() {
-		this.setup();
-		this.repoSearch();
+		this.run();
 	}
 
-	setup() {
+	async run() {
+		if (!process.env.GH_TOKEN) {
+			const token = await this.askToken();
+			process.env.GH_TOKEN = token;
+		}
+
 		vats.on('command-mode:enter', () => process.stdout.write(escapes.cursorShow));
 		vats.on('command-mode:exit', () => process.stdout.write(escapes.cursorHide));
 		vats.on('repo-search-select', () => this.repoSearch());
@@ -28,8 +31,17 @@ class Program {
 		});
 
 		// TODO: not this
-		const fetcher = new Fetcher('slammayjammy', process.env.GH_TOKEN);
+		const fetcher = new Fetcher('slammayjammay', process.env.GH_TOKEN);
 		map.set('fetcher', fetcher);
+
+		this.repoSearch();
+	}
+
+	async askToken() {
+		const prompt = 'Did not find "GH_TOKEN" environment variable. Enter it below or leave blank to make unauthenticated requests:\n> ';
+		const answer = await vats.prompt({ prompt });
+		console.log(answer);
+		return answer;
 	}
 
 	async repoSearch() {
