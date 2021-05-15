@@ -4,7 +4,9 @@
   "description": "Terminal app to navigate GitHub repos",
   "type": "module",
   "main": "src/index.js",
-  "bin": "./src/index.js",
+  "bin": {
+    "gh-ui-cli": "./src/index.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/slammayjammay/gh-ui-cli.git"
