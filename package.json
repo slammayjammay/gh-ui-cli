@@ -1,5 +1,20 @@
 {
+  "name": "gh-cli-ui",
+  "version": "0.1.0",
+  "description": "Terminal app to navigate GitHub repos",
   "type": "module",
+  "main": "src/index.js",
+  "bin": "gh-ui-cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/slammayjammay/gh-ui-cli.git"
+  },
+  "author": "Scott McKenzie",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/slammayjammay/gh-ui-cli/issues"
+  },
+  "homepage": "https://github.com/slammayjammay/gh-ui-cli#readme",
   "dependencies": {
     "ansi-escapes": "^4.3.2",
     "chalk": "^4.1.0",

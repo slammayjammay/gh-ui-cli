@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import escapes from 'ansi-escapes';
 import 'readline-refresh-line/hijack.js';
 import map from './map.js';
