@@ -39,7 +39,7 @@ class Program {
 		const config = this.getConfig(args);
 		(!config.username || !config.token) && await this.promptForConfig(config);
 
-		const fetcher = new Fetcher(config.username, config.token);
+		const fetcher = new Fetcher(config.apiUrl, config.username, config.token);
 		map.set('fetcher', fetcher);
 
 		vats.on('command-mode:enter', () => process.stdout.write(escapes.cursorShow));

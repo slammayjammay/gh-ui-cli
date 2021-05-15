@@ -1,7 +1,9 @@
 import fetch from 'node-fetch';
 
 export default class Fetcher {
-	constructor(username, token) {
+	constructor(apiUrl, username, token) {
+		this.apiUrl = apiUrl || `https://api.github.com`;
+
 		if (username && token) {
 			this.auth = this.createAuth(username, token);
 		}
@@ -26,11 +28,11 @@ export default class Fetcher {
 			return (await import('./seeds/repo-search.js')).default;
 		}
 
-		return this.fetch(`https://api.github.com/search/repositories?q=${encoded}`);
+		return this.fetch(`${this.apiUrl}/search/repositories?q=${encoded}`);
 	}
 
 	getRepo(repoName) {
-		return this.fetch(`https://api.github.com/repos/${repoName}`);
+		return this.fetch(`${this.apiUrl}/repos/${repoName}`);
 	}
 
 	getBranches(repoData) {
@@ -51,7 +53,7 @@ export default class Fetcher {
 	}
 
 	getFiles(repoData, sha = repoData.default_branch) {
-		return this.fetch(`https://api.github.com/repos/${repoData.full_name}/git/trees/${sha}?recursive=true`);
+		return this.fetch(`${this.apiUrl}/repos/${repoData.full_name}/git/trees/${sha}?recursive=true`);
 	}
 
 	destroy() {
