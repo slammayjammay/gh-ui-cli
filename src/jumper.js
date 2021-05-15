@@ -1,2 +1,2 @@
-import Jumper from '../../terminal-jumper/src/index.js';
+import Jumper from 'terminal-jumper';
 export default new Jumper({ useAlternateScreen: false });

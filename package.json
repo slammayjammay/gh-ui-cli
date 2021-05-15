@@ -10,7 +10,7 @@
     "readline-refresh-line": "github:slammayjammay/readline-refresh-line",
     "string-width": "^4.2.2",
     "strip-ansi": "^6.0.0",
-    "terminal-jumper": "github:slammayjammay/terminal-jumper",
+    "terminal-jumper": "github:slammayjammay/terminal-jumper#dev",
     "vats": "git+https://github.com/slammayjammay/vats.git#dev"
   }
 }
