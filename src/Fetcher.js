@@ -3,6 +3,9 @@ import fetch from 'node-fetch';
 export default class Fetcher {
 	constructor(apiUrl, username, token) {
 		this.apiUrl = apiUrl || `https://api.github.com`;
+		if (this.apiUrl.slice(-1) === '/') {
+			this.apiUrl = this.apiUrl.slice(-1);
+		}
 
 		if (username && token) {
 			this.auth = this.createAuth(username, token);

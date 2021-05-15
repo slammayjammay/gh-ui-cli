@@ -22,7 +22,8 @@ class Program {
 				h: 'help',
 				c: 'config',
 				u: 'username',
-				t: 'token'
+				t: 'token',
+				a: 'api-url'
 			}
 		});
 
@@ -68,7 +69,9 @@ class Program {
 			config.token = fs.readFileSync(config.tokenPath).toString().trim();
 		}
 
-		['username', 'token'].forEach(k => args[k] && (config[k] = args[k]));
+		args.username && (config.username = args.username);
+		args.token && (config.token = args.token);
+		args['api-url'] && (config.apiUrl = args['api-url']);
 
 		return config;
 	}
