@@ -39,6 +39,10 @@ class Colorscheme {
 			return emphasize.highlightAuto(text).value;
 		}
 	}
+
+	syntax(text, ext) {
+		return emphasize.highlight(ext, text).value;
+	}
 }
 
 export default new Colorscheme();

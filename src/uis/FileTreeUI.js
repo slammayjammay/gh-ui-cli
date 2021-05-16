@@ -204,12 +204,12 @@ export default class FileTreeUI extends BaseUI {
 	async onKeybinding({ kb }) {
 		const file = this.getSelectedFile();
 
-		if (file.type === 'tree' && ['cursor-right', 'return'].includes(kb.action.name)) {
+		if (file.type === 'tree' && kb.action.name === 'cursor-right') {
 			this.cd(file, true);
 		} else if (this.current.parent && kb.action.name === 'cursor-left') {
 			this.cd(this.current.parent, true);
-		} else if (file.type !== 'tree' && kb.action.name === 'return') {
-			this.onSelectFile(file);
+		} else if (kb.action.name === 'return') {
+			this.onSelectNode(file);
 		} else if (kb.action.name === 'ctrl+p') {
 			const ui = new CtrlPUI(this.repoData);
 
@@ -225,16 +225,16 @@ export default class FileTreeUI extends BaseUI {
 		}
 	}
 
-	async onSelectFile(file) {
-		const dialog = this.createDialog(file);
-		dialog.addHeader(file.path);
+	async onSelectNode(node) {
+		const dialog = this.createDialog(node);
+		dialog.addHeader(node.path);
 		this.unfocus();
 		dialog.open();
 		dialog.run().then(block => this.onDialogSelect(block));
 		vats.emitEvent('state-change');
 	}
 
-	createDialog(file) {
+	createDialog(node) {
 		const dialog = new DialogUI({
 			id: 'dialog',
 			width: 'min(100%, 50)',
@@ -243,8 +243,11 @@ export default class FileTreeUI extends BaseUI {
 			left: '(100% - {dialog}w) / 2'
 		});
 		const width = dialog.div.width();
-		const actions = ['Show details', 'Open in less', 'Open in Vim'];
-		!file.content && actions.unshift('Load content');
+		const actions = ['Show details'];
+		if (node.type !== 'tree') {
+			actions.unshift('Open in less', 'Open in Vim');
+			!node.content && actions.unshift('Load content');
+		}
 		actions.forEach(string => {
 			const block = dialog.addBlock(dialog.options.colorDefault(pad(` ${string} `, width)));
 			block.name = string;
@@ -265,8 +268,8 @@ export default class FileTreeUI extends BaseUI {
 			await this.loadSelectedFile();
 		} else if (block.name === 'Show details') {
 			vats.emitEvent('state-change');
-			const { parent, children, content, ...obj } = file;
-			await pager(JSON.stringify(obj, null, 2));
+			const json = await (await map.get('fetcher').getFile(this.repoData, file.path, map.get('branch'))).json();
+			await pager(colorscheme.syntax(JSON.stringify(json, null, 2), 'json'));
 		} else if (block.name === 'Open in less') {
 			vats.emitEvent('state-change');
 			await pager(colorscheme.autoSyntax(file.content, file.path));

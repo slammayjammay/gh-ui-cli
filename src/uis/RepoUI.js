@@ -35,7 +35,7 @@ export default class RepoUI extends BaseUI {
 
 		this.onKeypress = this.onKeypress.bind(this);
 
-		this.sidebarPrompt = jumper.addDivision(DIVS.SIDEBAR_PROMPT);
+		jumper.addDivision(DIVS.SIDEBAR_PROMPT);
 		jumper.getDivision('sidebar-prompt').addBlock(chalk.bgHex('#0d1117').blue.bold(' Tab > '), 'prompt');
 
 		this.sidebarUI = null;
@@ -211,7 +211,7 @@ export default class RepoUI extends BaseUI {
 			div.destroy();
 		});
 
-		this.currentUI = this.sidebarPrompt = this.sidebarUI = this.hr = null;
+		this.currentUI = this.sidebarUI = this.hr = null;
 		this.repoName = this.repoData = this.figletName = null;
 
 		super.destroy();
