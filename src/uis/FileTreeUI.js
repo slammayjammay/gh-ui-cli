@@ -205,7 +205,6 @@ export default class FileTreeUI extends BaseUI {
 		} else if (kb.action.name === 'return') {
 			this.onSelectNode(file);
 		} else if (kb.action.name === 'ctrl+p') {
-			// TODO: refactor to use Repo class
 			const ui = new CtrlPUI(this.repo);
 
 			ui.focus();
