@@ -18,10 +18,10 @@ import CtrlPUI from './CtrlPUI.js';
 
 // TODO: Use ViStateUI for all columns
 export default class FileTreeUI extends BaseUI {
-	constructor(divOptions, repoData) {
+	constructor(divOptions, repo) {
 		super(...arguments);
 
-		this.repoData = repoData;
+		this.repo = repo;
 		this.cache = new Map();
 		this.current = null;
 
@@ -159,29 +159,23 @@ export default class FileTreeUI extends BaseUI {
 	previewFile(file) {
 		const { children, content, ...json } = file;
 
-		if (file.content) {
-			return this.col3.addBlock(colorscheme.autoSyntax(file.content, file.path));
+		if (file.text) {
+			return this.col3.addBlock(colorscheme.autoSyntax(file.text, file.path));
 		}
 
 		this.col3.addBlock(`Press ${chalk.yellow('ctrl+l')} to load ${chalk.blue(file.path)}.`, 'load');
-	}
-
-	async loadFileContent(file) {
-		const res = await map.get('fetcher').getFile(this.repoData, file.path, map.get('branch') || this.repoData.default_branch);
-		const json = await res.json();
-		return Buffer.from(json.content, json.encoding).toString();
 	}
 
 	async loadSelectedFile() {
 		const file = this.getSelectedFile();
 		this.col3.getBlock('load').content('');
 		jumper.chain().render().jumpTo('{col-3}l', '{col-3}t').execute();
+
 		const loader = new Loader(`Loading ${chalk.blue(file.path)}...`);
 		loader.play();
-		const content = await this.loadFileContent(file);
+		await this.repo.loadFileData(file);
 		loader.end();
 
-		file.content = content;
 		if (this.getSelectedFile() === file) {
 			this.col3.reset();
 			this.previewFile(file);
@@ -196,7 +190,7 @@ export default class FileTreeUI extends BaseUI {
 			const amount = { J: 1, K: -1, F: height, B: -height }[key.formatted];
 			this.col3.scrollDown(amount);
 			jumper.render();
-		} else if (key.formatted === 'ctrl+l' && !file.content) {
+		} else if (key.formatted === 'ctrl+l' && !file.data) {
 			this.loadSelectedFile();
 		}
 	}
@@ -211,7 +205,8 @@ export default class FileTreeUI extends BaseUI {
 		} else if (kb.action.name === 'return') {
 			this.onSelectNode(file);
 		} else if (kb.action.name === 'ctrl+p') {
-			const ui = new CtrlPUI(this.repoData);
+			// TODO: refactor to use Repo class
+			const ui = new CtrlPUI(this.repo);
 
 			ui.focus();
 			this.unfocus();
@@ -246,7 +241,7 @@ export default class FileTreeUI extends BaseUI {
 		const actions = ['Show details'];
 		if (node.type !== 'tree') {
 			actions.unshift('Open in less', 'Open in Vim');
-			!node.content && actions.unshift('Load content');
+			!node.data && actions.unshift('Load content');
 		}
 		actions.forEach(string => {
 			const block = dialog.addBlock(dialog.options.colorDefault(pad(` ${string} `, width)));
@@ -268,12 +263,14 @@ export default class FileTreeUI extends BaseUI {
 			await this.loadSelectedFile();
 		} else if (block.name === 'Show details') {
 			vats.emitEvent('state-change');
-			const json = await (await map.get('fetcher').getFile(this.repoData, file.path, map.get('branch'))).json();
-			await pager(colorscheme.syntax(JSON.stringify(json, null, 2), 'json'));
+			!file.data && await this.repo.loadFileData(file);
+			await pager(colorscheme.syntax(JSON.stringify(file.data, null, 2), 'json'));
 		} else if (block.name === 'Open in less') {
 			vats.emitEvent('state-change');
-			await pager(colorscheme.autoSyntax(file.content, file.path));
+			!file.data && await this.repo.loadFileData(file);
+			await pager(colorscheme.autoSyntax(file.text, file.path));
 		} else if (block.name === 'Open in Vim') {
+			!file.data && await this.repo.loadFileData(file);
 			this.openInVim(file).then(() => vats.emitEvent('state-change'));
 		}
 
@@ -285,10 +282,10 @@ export default class FileTreeUI extends BaseUI {
 		const file = this.getSelectedFile();
 
 		if (command === 'less' && file.type !== 'tree') {
-			file.content = file.content || (await this.loadFileContent(file));
-			await pager(colorscheme.autoSyntax(file.content, file.path));
+			!file.data && await this.repo.loadFileData(file);
+			await pager(colorscheme.autoSyntax(file.text, file.path));
 		} else if (command === 'vim' && file.type !== 'tree') {
-			file.content = file.content || (await this.loadFileContent(file));
+			!file.data && await this.repo.loadFileData(file);
 			this.openInVim(file);
 		}
 	}
@@ -301,7 +298,7 @@ export default class FileTreeUI extends BaseUI {
 					throw err;
 				}
 
-				fs.writeSync(fd, file.content);
+				fs.writeSync(fd, file.text);
 				process.stdout.write(escapes.cursorShow);
 				spawnSync(`vim "${path}"`, { shell: process.env.SHELL, stdio: 'inherit' });
 				process.stdout.write(escapes.cursorHide);
@@ -320,7 +317,7 @@ export default class FileTreeUI extends BaseUI {
 		this.col2.destroy();
 
 		this.col1 = this.col2 = this.col3 = null;
-		this.repoData = this.current = this.cache = null;
+		this.repo = this.current = this.cache = null;
 
 		super.destroy();
 	}

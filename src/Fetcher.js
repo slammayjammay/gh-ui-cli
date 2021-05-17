@@ -1,11 +1,9 @@
 import fetch from 'node-fetch';
 
 export default class Fetcher {
-	constructor(apiUrl, username, token) {
-		this.apiUrl = apiUrl || `https://api.github.com`;
-		if (this.apiUrl.slice(-1) === '/') {
-			this.apiUrl = this.apiUrl.slice(-1);
-		}
+	constructor(apiUrl = 'https://api.github.com', username, token) {
+		this.apiUrl = apiUrl;
+		this.apiUrl.slice(-1) === '/' && (this.apiUrl = apiUrl.slice(-1));
 
 		if (username && token) {
 			this.auth = this.createAuth(username, token);
@@ -17,12 +15,16 @@ export default class Fetcher {
 		return `Basic ${auth}`;
 	}
 
-	fetch(url, options = {}, useAuth = true) {
+	fetchUrl(url, options = {}, useAuth = true) {
 		if (useAuth) {
 			options.headers = { Authorization: this.auth };
 		}
 
 		return fetch(url, options);
+	}
+
+	fetch(pathname, ...rest) {
+		return this.fetchUrl(`${this.apiUrl}${pathname}`, ...rest);
 	}
 
 	async searchRepos(query, debug = false) {
@@ -31,35 +33,14 @@ export default class Fetcher {
 			return (await import('./seeds/repo-search.js')).default;
 		}
 
-		return this.fetch(`${this.apiUrl}/search/repositories?q=${encoded}`);
+		return this.fetch(`/search/repositories?q=${encoded}`);
 	}
 
 	getRepo(repoName) {
-		return this.fetch(`${this.apiUrl}/repos/${repoName}`);
-	}
-
-	getBranches(repoData) {
-		return this.fetch(repoData.branches_url.replace('{/branch}', ''));
-	}
-
-	getCommits(repoData) {
-		return this.fetch(repoData.commits_url.replace('{/sha}', ''));
-	}
-
-	getIssues(repoData) {
-		return this.fetch(repoData.issues_url.replace('{/number}', ''));
-	}
-
-	getFile(repoData, filePath, ref = repoData.default_branch) {
-		const url = repoData.contents_url.replace('{+path}', filePath);
-		return this.fetch(`${url}?ref=${ref}`);
-	}
-
-	getFiles(repoData, sha = repoData.default_branch) {
-		return this.fetch(`${this.apiUrl}/repos/${repoData.full_name}/git/trees/${sha}?recursive=true`);
+		return this.fetch(`/repos/${repoName}`);
 	}
 
 	destroy() {
-		this.auth = null;
+		this.apiUrl = this.auth = null;
 	}
 };

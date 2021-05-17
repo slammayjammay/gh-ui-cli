@@ -8,13 +8,13 @@ import fuzzyFind from '../utils/fuzzy-find.js';
 import BaseUI from './BaseUI.js';
 
 export default class CtrlPUI extends BaseUI {
-	constructor(repoData) {
+	constructor(repo) {
 		super();
-		this.repoData = repoData;
+		this.repo = repo;
 
 		this.currentIdx = 0;
 		this.found = [];
-		this.files = map.get('allFiles').filter(o => o.type !== 'tree');
+		this.files = this.repo.allFiles.filter(o => o.type !== 'tree');
 
 		this.div = jumper.addDivision({
 			id: 'ctrlp',
@@ -29,7 +29,7 @@ export default class CtrlPUI extends BaseUI {
 			left: 0,
 			width: '100%',
 		});
-		header.addBlock(chalk.bgWhite.bold.hex('000')(pad(this.repoData.full_name, header.width())));
+		header.addBlock(chalk.bgWhite.bold.hex('000')(pad(this.repo.data.full_name, header.width())));
 
 		this.addVatsListener('keypress', 'onKeypress');
 	}

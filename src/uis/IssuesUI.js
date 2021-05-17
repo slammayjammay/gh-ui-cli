@@ -6,9 +6,9 @@ import Loader from '../Loader.js';
 import ViStateUI from './ViStateUI.js';
 
 export default class IssuesUI extends ViStateUI {
-	constructor(divOptions, repoData) {
+	constructor(divOptions, repo) {
 		super(divOptions);
-		this.repoData = repoData;
+		this.repo = repo;
 		this.hasFetched = false;
 	}
 
@@ -16,7 +16,7 @@ export default class IssuesUI extends ViStateUI {
 		const loader = new Loader('Loading issues...');
 		jumper.jumpTo(0, '100%');
 		loader.play();
-		const issues = await (await map.get('fetcher').getIssues(this.repoData)).json();
+		const issues = await (await this.repo.fetchIssues()).json();
 		loader.end();
 		this.hasFetched = true;
 
@@ -41,5 +41,10 @@ export default class IssuesUI extends ViStateUI {
 		}
 
 		super.onStateChange(...arguments);
+	}
+
+	destroy() {
+		this.repo = null;
+		super.destroy();
 	}
 };

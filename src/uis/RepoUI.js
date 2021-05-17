@@ -6,8 +6,8 @@ import center from '../utils/center.js';
 import map from '../map.js';
 import jumper from '../jumper.js';
 import vats from '../vats.js';
-import createFileTree from '../utils/create-file-tree.js';
 import Loader from '../Loader.js';
+import Repo from '../Repo.js';
 import BaseUI from './BaseUI.js';
 import DialogUI from './DialogUI.js';
 import FileTreeUI from './FileTreeUI.js';
@@ -32,6 +32,7 @@ export default class RepoUI extends BaseUI {
 
 		this.repoName = repoName;
 		this.branch = branch;
+		this.repo = null;
 
 		this.onKeypress = this.onKeypress.bind(this);
 
@@ -81,10 +82,11 @@ export default class RepoUI extends BaseUI {
 		const loader = new Loader(loaderString);
 
 		loader.play();
-		this.repoData = await (await map.get('fetcher').getRepo(this.repoName)).json();
+		const data = await (await map.get('fetcher').getRepo(this.repoName)).json();
+		this.repo = new Repo(data);
 		loader.end();
 
-		await this.loadFiles(this.branch || this.repoData.default_branch);
+		await this.loadFiles(this.branch || this.repo.data.default_branch);
 
 		vats.emitEvent('state-change');
 
@@ -98,12 +100,9 @@ export default class RepoUI extends BaseUI {
 		const loader = new Loader(loaderString);
 
 		loader.play();
-		const json = await (await map.get('fetcher').getFiles(this.repoData, branch)).json();
+		await this.repo.loadFiles(branch);
 		loader.end();
 
-		map.set('allFiles', json.tree);
-		map.set('tree', createFileTree(json.tree));
-		map.set('branch', branch);
 		this.openUI('files');
 		await this.cdToReadme();
 	}
@@ -111,17 +110,17 @@ export default class RepoUI extends BaseUI {
 	openUI(action) {
 		this.currentAction = action;
 		if (action === 'files') {
-			this.setCurrentAction(chalk.bold(`Files (${chalk.hex('#43ff43')(map.get('branch'))})`));
-			this.currentUI = new FileTreeUI(DIVS.FILE_UI, this.repoData);
+			this.setCurrentAction(chalk.bold(`Files (${chalk.hex('#43ff43')(this.repo.currentBranch)})`));
+			this.currentUI = new FileTreeUI(DIVS.FILE_UI, this.repo);
 		} else if (action === 'branches') {
 			this.setCurrentAction(chalk.bold('Branches'));
-			this.currentUI = new BranchesUI(DIVS.BRANCHES_UI, this.repoData);
+			this.currentUI = new BranchesUI(DIVS.BRANCHES_UI, this.repo);
 		} else if (action === 'commits') {
 			this.setCurrentAction(chalk.bold('Commits'));
-			this.currentUI = new CommitsUI(DIVS.COMMITS_UI, this.repoData);
+			this.currentUI = new CommitsUI(DIVS.COMMITS_UI, this.repo);
 		} else if (action === 'issues') {
 			this.setCurrentAction(chalk.bold('Issues'));
-			this.currentUI = new IssuesUI(DIVS.ISSUES_UI, this.repoData);
+			this.currentUI = new IssuesUI(DIVS.ISSUES_UI, this.repo);
 		}
 		this.currentUI.focus();
 		this.currentUI.run();
@@ -132,14 +131,13 @@ export default class RepoUI extends BaseUI {
 	}
 
 	async cdToReadme() {
-		const readme = map.get('allFiles').find(file => /^readme\.md/i.test(file.path));
+		const readme = this.repo.allFiles.find(file => /^readme\.md/i.test(file.path));
 		if (!readme) {
-			this.currentUI.cd(map.get('tree'));
+			this.currentUI.cd(this.repo.tree);
 		} else {
 			this.currentUI.cdToFile(readme);
-			if (!readme.content) {
-				const content = await this.currentUI.loadFileContent(readme);
-				readme.content = content;
+			if (!readme.data) {
+				await this.repo.loadFileData(readme);
 			}
 		}
 	}
@@ -187,7 +185,7 @@ export default class RepoUI extends BaseUI {
 
 		// TODO: remember last selected file
 		if (this.currentAction === 'files') {
-			this.currentUI.cd(map.get('tree'));
+			this.currentUI.cd(this.repo.tree);
 		}
 
 		jumper.render();
@@ -212,7 +210,7 @@ export default class RepoUI extends BaseUI {
 		});
 
 		this.currentUI = this.sidebarUI = this.hr = null;
-		this.repoName = this.repoData = this.figletName = null;
+		this.repoName = this.repo = this.figletName = null;
 
 		super.destroy();
 	}

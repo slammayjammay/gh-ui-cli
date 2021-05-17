@@ -6,9 +6,9 @@ import Loader from '../Loader.js';
 import ViStateUI from './ViStateUI.js';
 
 export default class CommitsUI extends ViStateUI {
-	constructor(divOptions, repoData) {
+	constructor(divOptions, repo) {
 		super(divOptions);
-		this.repoData = repoData;
+		this.repo = repo;
 		this.hasFetched = false;
 	}
 
@@ -16,7 +16,7 @@ export default class CommitsUI extends ViStateUI {
 		const loader = new Loader('Loading commits...');
 		jumper.jumpTo(0, '100%');
 		loader.play();
-		const commits = await (await map.get('fetcher').getCommits(this.repoData)).json();
+		const commits = await (await this.repo.fetchCommits()).json();
 		loader.end();
 		this.hasFetched = true;
 
@@ -39,5 +39,10 @@ export default class CommitsUI extends ViStateUI {
 		}
 
 		return super.onStateChange(...arguments);
+	}
+
+	destroy() {
+		this.repo = null;
+		super.destroy();
 	}
 };

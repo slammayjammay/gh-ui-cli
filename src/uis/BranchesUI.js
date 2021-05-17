@@ -6,9 +6,9 @@ import Loader from '../Loader.js';
 import ViStateUI from './ViStateUI.js';
 
 export default class BranchesUI extends ViStateUI {
-	constructor(divOptions, repoData) {
+	constructor(divOptions, repo) {
 		super(divOptions);
-		this.repoData = repoData;
+		this.repo = repo;
 		this.hasFetched = false;
 	}
 
@@ -16,7 +16,7 @@ export default class BranchesUI extends ViStateUI {
 		const loader = new Loader('Loading branches...');
 		jumper.jumpTo(0, '100%');
 		loader.play();
-		const branches = await (await map.get('fetcher').getBranches(this.repoData)).json();
+		const branches = await (await this.repo.fetchBranches()).json();
 		loader.end();
 		this.hasFetched = true;
 		branches.forEach(({ name }) => {
@@ -45,5 +45,10 @@ export default class BranchesUI extends ViStateUI {
 			const { branch } = this.getSelectedBlock();
 			vats.emitEvent('branch-select', { branch });
 		}
+	}
+
+	destroy() {
+		this.repo = null;
+		super.destroy();
 	}
 };
