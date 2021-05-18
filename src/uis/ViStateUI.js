@@ -101,7 +101,7 @@ export default class ViStateUI extends BaseUI {
 	}
 
 	onStateChange({ previousState }) {
-		if (previousState && previousState.cursorY === this.state.cursorY) {
+		if (this.blocks.length === 0 || previousState && previousState.cursorY === this.state.cursorY) {
 			return;
 		}
 

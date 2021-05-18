@@ -52,17 +52,17 @@ export default class RepoSearchUI extends BaseUI {
 	getSearchableItems() { return this.resultsUI.getSearchableItems(); }
 	getSearchOptions() { return this.resultsUI.getSearchOptions(); }
 
-	async run() {
-		this.promptForSearchQuery().then(query => this.fetchRepos(query));
+	run() {
+		process.nextTick(() => {
+			this.promptForSearchQuery().then(query => this.fetchRepos(query));
+		});
 		return super.run();
 	}
 
 	async promptForSearchQuery() {
-		const eraseString = this.resultsUI.div.eraseString();
-
 		this.resultsUI.div.reset();
 
-		process.stdout.write(jumper.renderString() + escapes.cursorShow);
+		jumper.chain().jumpTo('{input}l', '{input}t').appendToChain(escapes.cursorShow).execute();
 		const query = await vats.prompt({ prompt: PROMPT });
 		process.stdout.write(escapes.cursorHide);
 
@@ -89,6 +89,11 @@ export default class RepoSearchUI extends BaseUI {
 
 		loader.end();
 
+		if (json.items.length === 0) {
+			jumper.chain().jumpTo('{results}l', '{results}t').appendToChain('No results found.').execute();
+			return this.promptForSearchQuery().then(query => this.fetchRepos(query));
+		}
+
 		const width = this.resultsUI.div.width();
 		json.items.forEach(item => {
 			const lines = [item.full_name];
@@ -105,6 +110,7 @@ export default class RepoSearchUI extends BaseUI {
 
 	onKeypress({ key }) {
 		if (key.formatted === 'escape') {
+			this.resultsUI.div.erase();
 			this.promptForSearchQuery().then(query => this.fetchRepos(query));
 		} else if (key.formatted === 'return') {
 			const repo = this.resultsUI.getSelectedBlock().name;
