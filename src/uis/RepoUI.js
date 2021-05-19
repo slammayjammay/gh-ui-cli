@@ -3,9 +3,11 @@ import stringWidth from 'string-width';
 import figlet from 'figlet';
 import pad from '../utils/pad.js';
 import center from '../utils/center.js';
+import pager from '../utils/pager.js';
 import map from '../map.js';
 import jumper from '../jumper.js';
 import vats from '../vats.js';
+import colorscheme from '../colorscheme.js';
 import Loader from '../Loader.js';
 import Repo from '../Repo.js';
 import BaseUI from './BaseUI.js';
@@ -33,6 +35,7 @@ export default class RepoUI extends BaseUI {
 		this.repoName = repoName;
 		this.branch = branch;
 		this.repo = null;
+		this.filesFetched = false;
 
 		this.onKeypress = this.onKeypress.bind(this);
 
@@ -88,6 +91,7 @@ export default class RepoUI extends BaseUI {
 
 		await this.loadFiles(this.branch || this.repo.data.default_branch);
 
+		this.filesFetched = true;
 		vats.emitEvent('state-change');
 
 		return super.run();
@@ -143,6 +147,10 @@ export default class RepoUI extends BaseUI {
 	}
 
 	onKeypress({ key }) {
+		if (!this.filesFetched) {
+			return;
+		}
+
 		if (this.sidebarUI && this.sidebarUI.isFocused && key.formatted === 'tab') {
 			this.sidebarUI.end();
 			vats.emitEvent('state-change');
@@ -158,7 +166,8 @@ export default class RepoUI extends BaseUI {
 	createSidebar() {
 		const sidebarUI = new DialogUI(DIVS.SIDEBAR);
 		const width = jumper.evaluate('{sidebar}w');
-		['Files', 'Branches', 'Commits', 'Issues', 'Code search', 'Repo search'].forEach(string => {
+		const actions = ['Show details', 'Files', 'Branches', 'Commits', 'Issues', 'Code search', 'Repo search'];
+		actions.forEach(string => {
 			const block = sidebarUI.addBlock(sidebarUI.options.colorDefault(pad(` ${string} `, width)));
 			block.name = string.toLowerCase();
 		});
@@ -171,6 +180,11 @@ export default class RepoUI extends BaseUI {
 
 		if (!block) {
 			return vats.emitEvent('state-change');
+		}
+
+		if (block.name === 'show details') {
+			const json = JSON.stringify(this.repo.data, null, 2);
+			return pager(colorscheme.syntax(json, 'json')).then(() => jumper.render());
 		}
 
 		if (block.name === 'repo search') {
