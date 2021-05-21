@@ -89,7 +89,7 @@ export default class RepoSearchUI extends BaseUI {
 
 		loader.end();
 
-		if (json.items.length === 0) {
+		if (!json.items || json.items.length === 0) {
 			jumper.chain().jumpTo('{results}l', '{results}t').appendToChain('No results found.').execute();
 			return this.promptForSearchQuery().then(query => this.fetchRepos(query));
 		}

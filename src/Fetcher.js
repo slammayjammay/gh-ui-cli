@@ -17,7 +17,8 @@ export default class Fetcher {
 
 	fetchUrl(url, options = {}, useAuth = true) {
 		if (useAuth) {
-			options.headers = { Authorization: this.auth };
+			options.headers = options.headers || {};
+			options.headers.Authorization = this.auth;
 		}
 
 		return fetch(url, options);
