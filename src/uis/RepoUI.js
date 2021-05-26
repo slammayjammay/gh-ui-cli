@@ -16,6 +16,7 @@ import FileTreeUI from './FileTreeUI.js';
 import BranchesUI from './BranchesUI.js';
 import CommitsUI from './CommitsUI.js';
 import IssuesUI from './IssuesUI.js';
+import CodeSearchUI from './CodeSearchUI.js';
 
 const DIVS = {
 	SIDEBAR_PROMPT: { id: 'sidebar-prompt', top: 0, left: 0, overflowX: 'scroll', width: '{sidebar-prompt}nw' },
@@ -25,7 +26,8 @@ const DIVS = {
 	FILE_UI: { id: 'file-ui', top: '{hr}b', left: '{hr}l', width: '{repo-name}w' },
 	COMMITS_UI: { id: 'commits-ui', top: '{hr}b', left: '{hr}l', width: '{repo-name}w' },
 	BRANCHES_UI: { id: 'branches-ui', top: '{hr}b', left: '{hr}l', width: '{repo-name}w' },
-	ISSUES_UI: { id: 'issues-ui', top: '{hr}b', left: '{hr}l', width: '{repo-name}w' }
+	ISSUES_UI: { id: 'issues-ui', top: '{hr}b', left: '{hr}l', width: '{repo-name}w' },
+	CODE_SEARCH_UI: { id: 'code-search-ui', top: '{hr}b', left: '{hr}l', width: '{repo-name}w' }
 };
 
 export default class RepoUI extends BaseUI {
@@ -125,6 +127,9 @@ export default class RepoUI extends BaseUI {
 		} else if (action === 'issues') {
 			this.setCurrentAction(chalk.bold('Issues'));
 			this.currentUI = new IssuesUI(DIVS.ISSUES_UI, this.repo);
+		} else if (action === 'code search') {
+			this.setCurrentAction(chalk.bold('Code Search'));
+			this.currentUI = new CodeSearchUI(DIVS.CODE_SEARCH_UI, this.repo);
 		}
 		this.currentUI.focus();
 		this.currentUI.run();

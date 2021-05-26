@@ -42,4 +42,10 @@ export default class Repo {
 	fetchIssues() {
 		return map.get('fetcher').fetchUrl(this.data.issues_url.replace('{/number}', ''));
 	}
+
+	searchCode(query) {
+		const url = `/search/code?q=${encodeURIComponent(query)}+repo:${this.data.full_name}`;
+		const options = { headers: { Accept: 'application/vnd.github.v3+json' } };
+		return map.get('fetcher').fetch(url, options);
+	}
 }

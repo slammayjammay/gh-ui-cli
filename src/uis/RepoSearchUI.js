@@ -53,10 +53,9 @@ export default class RepoSearchUI extends BaseUI {
 	getSearchOptions() { return this.resultsUI.getSearchOptions(); }
 
 	run() {
-		process.nextTick(() => {
-			this.promptForSearchQuery().then(query => this.fetchRepos(query));
-		});
-		return super.run();
+		const promise = super.run();
+		this.promptForSearchQuery().then(query => this.fetchRepos(query));
+		return promise;
 	}
 
 	async promptForSearchQuery() {
