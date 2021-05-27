@@ -65,8 +65,8 @@ class Program {
 			config = this.readConfig(configPath);
 		}
 
-		if (config.tokenPath) {
-			config.token = fs.readFileSync(config.tokenPath).toString().trim();
+		if (config.tokenEnvVar) {
+			config.token = process.env[config.tokenEnvVar];
 		}
 
 		args.username && (config.username = args.username);
