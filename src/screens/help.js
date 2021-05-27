@@ -20,10 +20,10 @@ ${chalk.bold('CONFIG')}
     ${chalk.cyan('$ gh-ui-cli -c')}
 
     Possible config values:
-    ${chalk.bold('username')}   ${chalk.gray('(string)')}       Username used for authentication.
-    ${chalk.bold('tokenPath')}  ${chalk.gray('(string)')}       Path to a file containing the GitHub personal access token.
-    ${chalk.bold('token')}      ${chalk.gray('(string)')}       GitHub personal access token.
-    ${chalk.bold('apiUrl')}     ${chalk.gray('(string)')}       URL base to use for API requests (default ${chalk.bold('https://api.github.com')})
+    ${chalk.bold('username')}     ${chalk.gray('(string)')}       Username used for authentication.
+    ${chalk.bold('token')}        ${chalk.gray('(string)')}       GitHub personal access token.
+    ${chalk.bold('tokenEnvVar')}  ${chalk.gray('(string)')}       Environment variable to use for personal access token.
+    ${chalk.bold('apiUrl')}       ${chalk.gray('(string)')}       URL base to use for API requests (default ${chalk.bold('https://api.github.com')})
 
     Note: if the "tokenPath" config key is provided, the path must point to a file that only contains the personal access token (whitespace OK).
 
