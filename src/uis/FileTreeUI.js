@@ -231,24 +231,15 @@ export default class FileTreeUI extends BaseUI {
 	}
 
 	createDialog(node) {
-		const dialog = new DialogUI({
-			id: 'dialog',
-			width: 'min(100%, 50)',
-			height: 'min(100%, 20)',
-			top: '(100% - {dialog}h) / 2',
-			left: '(100% - {dialog}w) / 2'
-		});
-		const width = dialog.div.width();
+		const dialog = new DialogUI();
 		const actions = ['Show details'];
 		if (node.type !== 'tree') {
 			actions.unshift('Open in less', 'Open in Vim');
 			!node.data && actions.unshift('Load content');
 		}
-		actions.forEach(string => {
-			const block = dialog.addBlock(dialog.options.colorDefault(pad(` ${string} `, width)));
-			block.name = string;
-		});
-		dialog.sync();
+
+		dialog.addActions(actions);
+
 		return dialog;
 	}
 

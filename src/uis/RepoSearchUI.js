@@ -139,7 +139,7 @@ export default class RepoSearchUI extends BaseUI {
 		});
 
 		this.resultsUI.destroy();
-		this.resultsUI = this.resolve = null;
+		this.resultsUI = null;
 
 		super.destroy();
 	}

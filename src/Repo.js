@@ -45,7 +45,7 @@ export default class Repo {
 
 	searchCode(query) {
 		const url = `/search/code?q=${encodeURIComponent(query)}+repo:${this.data.full_name}`;
-		const options = { headers: { Accept: 'application/vnd.github.v3+json' } };
+		const options = { headers: { Accept: 'application/vnd.github.v3.text-match+json' } };
 		return map.get('fetcher').fetch(url, options);
 	}
 }

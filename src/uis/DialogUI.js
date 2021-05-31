@@ -2,7 +2,16 @@ import chalk from 'chalk';
 import map from '../map.js';
 import jumper from '../jumper.js';
 import center from '../utils/center.js';
+import pad from '../utils/pad.js';
 import ViStateUI from './ViStateUI.js';
+
+const DIV_OPTION_DEFAULTS = {
+	id: 'dialog',
+	width: 'min(100%, 50)',
+	height: 'min(100%, 20)',
+	top: '(100% - {dialog}h) / 2',
+	left: '(100% - {dialog}w) / 2'
+};
 
 const DEFAULTS = {
 	colorDefault: text => chalk.bgHex('#0d1117').blue.bold(text),
@@ -12,8 +21,11 @@ const DEFAULTS = {
 
 export default class DialogUI extends ViStateUI {
 	constructor(divOptions, options = {}) {
+		divOptions = { ...DIV_OPTION_DEFAULTS, ...divOptions };
 		options = { ...DEFAULTS, ...options };
+
 		super(divOptions, options);
+
 		this.headerDiv = null;
 		this.addVatsListener('keypress', 'onKeypress');
 	}
@@ -28,6 +40,18 @@ export default class DialogUI extends ViStateUI {
 		});
 		text = center(text, this.headerDiv.width());
 		this.headerDiv.addBlock(this.options.colorHeader(text));
+	}
+
+	addActions(actions) {
+		actions.forEach(string => this.addAction(string, false));
+		this.sync();
+	}
+
+	addAction(string, shouldSync = true) {
+		const width = this.div.width();
+		const block = this.addBlock(this.options.colorDefault(pad(` ${string} `, width)));
+		block.name = string;
+		shouldSync && this.sync();
 	}
 
 	toggle() {
@@ -61,7 +85,7 @@ export default class DialogUI extends ViStateUI {
 
 	onKeypress({ key }) {
 		if (key.formatted === 'escape') {
-			this.end();
+			this.end(false);
 		} else if (key.formatted === 'return') {
 			this.end(this.getSelectedBlock());
 		}

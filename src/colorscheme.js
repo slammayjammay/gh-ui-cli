@@ -6,7 +6,7 @@ import emphasize from 'emphasize';
 class Colorscheme {
 	constructor() {
 		this.map = new Map([
-			['default', chalk.white],
+			['default', chalk],
 			['highlight', chalk.bgWhite.bold.hex('000')],
 			['folder', chalk.bold.green],
 			['folder-highlight', chalk.bgGreen.bold.hex('000')],

@@ -132,7 +132,7 @@ export default class RepoUI extends BaseUI {
 			this.currentUI = new CodeSearchUI(DIVS.CODE_SEARCH_UI, this.repo);
 		}
 		this.currentUI.focus();
-		this.currentUI.run();
+		this.currentUI.run().then((...args) => this.onUIClose(...args));
 	}
 
 	setCurrentAction(string) {
@@ -151,14 +151,22 @@ export default class RepoUI extends BaseUI {
 		}
 	}
 
+	onUIClose(data = {}) {
+		if (data.action === 'open-in-file-tree') {
+			const file = this.repo.allFiles.find(file => file.path === data.path);
+			this.openUI('files');
+			this.currentUI.cdToFile(file);
+			vats.emitEvent('state-change');
+		}
+	}
+
 	onKeypress({ key }) {
 		if (!this.filesFetched) {
 			return;
 		}
 
 		if (this.sidebarUI && this.sidebarUI.isFocused && key.formatted === 'tab') {
-			this.sidebarUI.end();
-			vats.emitEvent('state-change');
+			this.sidebarUI.end(false);
 		} else if (key.formatted === 'tab') {
 			this.currentUI.unfocus();
 			this.sidebarUI = this.createSidebar();
@@ -180,10 +188,11 @@ export default class RepoUI extends BaseUI {
 		return sidebarUI;
 	}
 
-	onSidebarAction(block) {
-		this.currentUI.focus();
+	async onSidebarAction(block) {
+		this.currentUI.unfocus();
 
-		if (!block) {
+		if (block === false) {
+			this.currentUI.focus();
 			return vats.emitEvent('state-change');
 		}
 
@@ -206,6 +215,8 @@ export default class RepoUI extends BaseUI {
 		if (this.currentAction === 'files') {
 			this.currentUI.cd(this.repo.tree);
 		}
+
+		this.currentUI.focus();
 
 		jumper.render();
 		vats.emitEvent('state-change');
