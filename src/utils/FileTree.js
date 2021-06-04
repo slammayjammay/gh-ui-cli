@@ -48,7 +48,7 @@ export default class Tree {
 
 	// TODO: idk
 	allFiles() {
-		return new Array(this.map.values());
+		return Array.from(this.map.values());
 	}
 
 	destroy() {
