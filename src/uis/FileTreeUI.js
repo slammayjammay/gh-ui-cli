@@ -1,10 +1,8 @@
-import { spawnSync } from 'child_process';
-import fs from 'fs';
 import { basename } from 'path';
-import tmp from 'tmp';
 import escapes from 'ansi-escapes';
 import chalk from 'chalk';
 import pager from '../utils/pager.js';
+import vim from '../utils/vim.js';
 import map from '../map.js';
 import jumper from '../jumper.js';
 import vats from '../vats.js';
@@ -263,7 +261,7 @@ export default class FileTreeUI extends BaseUI {
 			await pager(colorscheme.autoSyntax(file.text, file.path));
 		} else if (block.name === 'Open in Vim') {
 			!file.data && await this.repo.loadFileData(file);
-			this.openInVim(file).then(() => vats.emitEvent('state-change'));
+			vim(file.text, file.path).then(() => vats.emitEvent('state-change'));
 		}
 
 		vats.emitEvent('state-change');
@@ -278,27 +276,8 @@ export default class FileTreeUI extends BaseUI {
 			await pager(colorscheme.autoSyntax(file.text, file.path));
 		} else if (command === 'vim' && file.type !== 'tree') {
 			!file.data && await this.repo.loadFileData(file);
-			this.openInVim(file);
+			vim(file.text, file.path);
 		}
-	}
-
-	openInVim(file) {
-		return new Promise(resolve => {
-			const name = file.path.replace(/\//g, '_');
-			tmp.file({ name }, (err, path, fd, done) => {
-				if (err) {
-					throw err;
-				}
-
-				fs.writeSync(fd, file.text);
-				process.stdout.write(escapes.cursorShow);
-				spawnSync(`vim "${path}"`, { shell: process.env.SHELL, stdio: 'inherit' });
-				process.stdout.write(escapes.cursorHide);
-
-				done();
-				resolve();
-			});
-		});
 	}
 
 	destroy() {

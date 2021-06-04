@@ -11,7 +11,6 @@ import ViStateUI from './ViStateUI.js';
 
 const PROMPT = ' Enter a repo name or URL > ';
 
-// TODO: no results error?
 // TODO: cancel requests
 export default class RepoSearchUI extends BaseUI {
 	constructor() {

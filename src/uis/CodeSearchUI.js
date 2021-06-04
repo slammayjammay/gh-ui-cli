@@ -3,6 +3,7 @@ import sliceAnsi from 'slice-ansi';
 import chalk from 'chalk';
 import pad from '../utils/pad.js';
 import pager from '../utils/pager.js';
+import vim from '../utils/vim.js';
 import jumper from '../jumper.js';
 import vats from '../vats.js';
 import colorscheme from '../colorscheme.js';
@@ -38,6 +39,10 @@ export default class CodeSearchUI extends BaseUI {
 			height: '100%'
 		});
 		this.previewBlock = this.preview.addBlock('');
+
+		this.addVatsListener('state-change', 'onStateChange');
+		this.addVatsListener('keypress', 'onKeypress');
+		this.addVatsListener('command', 'onCommand');
 	}
 
 	run() {
@@ -48,8 +53,6 @@ export default class CodeSearchUI extends BaseUI {
 
 	focus() {
 		this.resultsUI.focus();
-		this.addVatsListener('state-change', 'onStateChange');
-		this.addVatsListener('keypress', 'onKeypress');
 		return super.focus();
 	}
 
@@ -92,9 +95,14 @@ export default class CodeSearchUI extends BaseUI {
 		this.previewSelectedFile();
 	}
 
+	getSelectedFile() {
+		const selected = this.resultsUI.getSelectedBlock();
+		return this.repo.tree.map.get(selected.item.path);
+	}
+
 	previewSelectedFile() {
 		const selected = this.resultsUI.getSelectedBlock();
-		const file = this.repo.tree.map.get(selected.item.path);
+		const file = this.getSelectedFile();
 		const hr = new Array(this.preview.width()).fill(chalk.gray('-')).join('');
 		const fragments = selected.item.text_matches.map(match => this.formatFragment(match));
 		this.previewBlock.content(fragments.join(`\n\n${hr}\n${hr}\n\n`));
@@ -123,8 +131,7 @@ export default class CodeSearchUI extends BaseUI {
 		if (key.formatted === 'return') {
 			this.onSelectNode(this.resultsUI.getSelectedBlock().item);
 		} else if (key.formatted === 'ctrl+l') {
-			const selected = this.resultsUI.getSelectedBlock();
-			const file = this.repo.tree.map.get(selected.item.path);
+			const file = this.getSelectedFile();
 			await this.repo.loadFileData(file);
 			vats.emitEvent('state-change');
 		} else if (['J', 'K', 'F', 'B'].includes(key.formatted)) {
@@ -138,7 +145,7 @@ export default class CodeSearchUI extends BaseUI {
 	async onSelectNode(node) {
 		const dialog = new DialogUI();
 		dialog.addHeader(node.path);
-		dialog.addActions(['Show details', 'Show in file tree']);
+		dialog.addActions(['Show details', 'Open in less', 'Open in Vim', 'Show in file tree']);
 
 		this.unfocus();
 		dialog.open();
@@ -154,12 +161,34 @@ export default class CodeSearchUI extends BaseUI {
 		}
 
 		const selectedItem = this.resultsUI.getSelectedBlock().item;
+		const file = this.getSelectedFile();
 
 		if (block.name === 'Show details') {
 			await pager(colorscheme.syntax(JSON.stringify(selectedItem, null, 2), 'json'));
 			vats.emitEvent('state-change');
+		} else if (block.name === 'Open in less') {
+			!file.data && await this.repo.loadFileData(file);
+			await pager(colorscheme.autoSyntax(file.text, file.path));
+			vats.emitEvent('state-change');
+		} else if (block.name === 'Open in Vim') {
+			!file.data && await this.repo.loadFileData(file);
+			await vim(file.text, file.path);
+			vats.emitEvent('state-change');
 		} else if (block.name === 'Show in file tree') {
 			this.end({ action: 'open-in-file-tree', path: selectedItem.path });
+		}
+	}
+
+	async onCommand({ argv }) {
+		const command = argv._[0];
+		const file = this.getSelectedFile();
+
+		if (command === 'less') {
+			!file.data && await this.repo.loadFileData(file);
+			await pager(colorscheme.autoSyntax(file.text, file.path));
+		} else if (command === 'vim') {
+			!file.data && await this.repo.loadFileData(file);
+			vim(file.text, file.path);
 		}
 	}
 

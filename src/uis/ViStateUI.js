@@ -69,7 +69,6 @@ export default class ViStateUI extends BaseUI {
 		return this.div.getBlock(this.div.blockIds[idx]);
 	}
 
-	// TODO: breaks when no items are given
 	sync() {
 		this.state.windowWidth = this.div.width() - 1;
 		this.state.windowHeight = this.div.height() - 1;
