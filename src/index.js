@@ -94,7 +94,8 @@ class Program {
 		console.log(`You have not specified a ${warning}. Accessing the GitHub API without authentication will limit the number of requests you can make. Do you want to provide these value(s) now? (Y/n)`);
 
 		const answer = await vats.prompt({ prompt: '> ' });
-		if (!answer || answer[0].toLowerCase() === 'n') {
+		if (!answer || answer[0].toLowerCase() !== 'y') {
+			process.exit();
 			return;
 		}
 
