@@ -1,11 +1,11 @@
-import createFileTree from './utils/create-file-tree.js';
+import FileTree from './utils/FileTree.js';
 import map from './map.js';
 
 export default class Repo {
 	constructor(data) {
 		this.data = data;
 		this.currentBranch = this.data.default_branch;
-		this.allFiles = this.tree = null;
+		this.tree = null;
 	}
 
 	async fetchFiles(sha) {
@@ -15,8 +15,7 @@ export default class Repo {
 	async loadFiles(sha = this.data.default_branch) {
 		const json = await (await this.fetchFiles(sha)).json();
 		this.currentBranch = sha;
-		this.allFiles = json.tree;
-		this.tree = createFileTree(this.allFiles);
+		this.tree = new FileTree(json.tree);
 	}
 
 	fetchFileData(file, ref = this.currentBranch) {
@@ -47,5 +46,9 @@ export default class Repo {
 		const url = `/search/code?q=${encodeURIComponent(query)}+repo:${this.data.full_name}`;
 		const options = { headers: { Accept: 'application/vnd.github.v3.text-match+json' } };
 		return map.get('fetcher').fetch(url, options);
+	}
+
+	destroy() {
+		// TODO
 	}
 }

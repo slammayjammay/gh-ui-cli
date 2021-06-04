@@ -140,9 +140,9 @@ export default class RepoUI extends BaseUI {
 	}
 
 	async cdToReadme() {
-		const readme = this.repo.allFiles.find(file => /^readme\.md/i.test(file.path));
+		const readme = this.repo.tree.allFiles().find(file => /^readme\.md/i.test(file.path));
 		if (!readme) {
-			this.currentUI.cd(this.repo.tree);
+			this.currentUI.cd(this.repo.tree.root);
 		} else {
 			this.currentUI.cdToFile(readme);
 			if (!readme.data) {
@@ -153,7 +153,7 @@ export default class RepoUI extends BaseUI {
 
 	onUIClose(data = {}) {
 		if (data.action === 'open-in-file-tree') {
-			const file = this.repo.allFiles.find(file => file.path === data.path);
+			const file = this.repo.tree.map.get(data.path);
 			this.openUI('files');
 			this.currentUI.cdToFile(file);
 			vats.emitEvent('state-change');
@@ -213,7 +213,7 @@ export default class RepoUI extends BaseUI {
 
 		// TODO: remember last selected file
 		if (this.currentAction === 'files') {
-			this.currentUI.cd(this.repo.tree);
+			this.currentUI.cd(this.repo.tree.root);
 		}
 
 		this.currentUI.focus();

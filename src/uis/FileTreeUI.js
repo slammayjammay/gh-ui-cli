@@ -198,8 +198,8 @@ export default class FileTreeUI extends BaseUI {
 	async onKeybinding({ kb }) {
 		const file = this.getSelectedFile();
 
-		if (kb.action.name === 'cursor-to-document-left' && this.current !== this.repo.tree) {
-			this.cd(this.repo.tree, true);
+		if (kb.action.name === 'cursor-to-document-left' && this.current !== this.repo.tree.root) {
+			this.cd(this.repo.tree.root, true);
 		} else if (file.type === 'tree' && kb.action.name === 'cursor-right') {
 			this.cd(file, true);
 		} else if (this.current.parent && kb.action.name === 'cursor-left') {

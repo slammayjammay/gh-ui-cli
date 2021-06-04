@@ -1,8 +1,11 @@
 import escapes from 'ansi-escapes';
+import sliceAnsi from 'slice-ansi';
 import chalk from 'chalk';
 import pad from '../utils/pad.js';
+import pager from '../utils/pager.js';
 import jumper from '../jumper.js';
 import vats from '../vats.js';
+import colorscheme from '../colorscheme.js';
 import BaseUI from './BaseUI.js';
 import ViStateUI from './ViStateUI.js';
 import DialogUI from './DialogUI.js';
@@ -86,23 +89,56 @@ export default class CodeSearchUI extends BaseUI {
 			return;
 		}
 
+		this.previewSelectedFile();
+	}
+
+	previewSelectedFile() {
 		const selected = this.resultsUI.getSelectedBlock();
+		const file = this.repo.tree.map.get(selected.item.path);
 		const hr = new Array(this.preview.width()).fill(chalk.gray('-')).join('');
-		const preview = selected.item.text_matches.map(m => m.fragment).join(`\n\n${hr}\n\n`)
-		this.previewBlock.content(preview);
+		const fragments = selected.item.text_matches.map(match => this.formatFragment(match));
+		this.previewBlock.content(fragments.join(`\n\n${hr}\n${hr}\n\n`));
 		jumper.render();
 	}
 
-	onKeypress({ key }) {
+	formatFragment(match) {
+		const { fragment, matches } = match;
+		const allIndices = matches.map(({ indices }) => indices);
+
+		const slices = [];
+		let start = 0, end = 0;
+
+		for (let i = 0, l = allIndices.length; i < l; i++) {
+			start = allIndices[i][0];
+			slices.push(fragment.slice(end, start));
+			end = allIndices[i][1];
+			slices.push(chalk.bgYellow(fragment.slice(start, end)));
+		}
+		slices.push(fragment.slice(end, fragment.length));
+
+		return slices.join('');
+	}
+
+	async onKeypress({ key }) {
 		if (key.formatted === 'return') {
 			this.onSelectNode(this.resultsUI.getSelectedBlock().item);
+		} else if (key.formatted === 'ctrl+l') {
+			const selected = this.resultsUI.getSelectedBlock();
+			const file = this.repo.tree.map.get(selected.item.path);
+			await this.repo.loadFileData(file);
+			vats.emitEvent('state-change');
+		} else if (['J', 'K', 'F', 'B'].includes(key.formatted)) {
+			const height = this.preview.height();
+			const amount = { J: 1, K: -1, F: height, B: -height }[key.formatted];
+			this.preview.scrollDown(amount);
+			jumper.render();
 		}
 	}
 
 	async onSelectNode(node) {
 		const dialog = new DialogUI();
 		dialog.addHeader(node.path);
-		dialog.addAction('Show in file tree');
+		dialog.addActions(['Show details', 'Show in file tree']);
 
 		this.unfocus();
 		dialog.open();
@@ -110,15 +146,20 @@ export default class CodeSearchUI extends BaseUI {
 		vats.emitEvent('state-change');
 	}
 
-	onDialogSelect(block) {
+	async onDialogSelect(block) {
+		this.focus();
+
 		if (!block) {
-			this.focus();
 			return vats.emitEvent('state-change');
 		}
 
-		if (block.name === 'Show in file tree') {
-			const path = this.resultsUI.getSelectedBlock().item.path;
-			this.end({ action: 'open-in-file-tree', path });
+		const selectedItem = this.resultsUI.getSelectedBlock().item;
+
+		if (block.name === 'Show details') {
+			await pager(colorscheme.syntax(JSON.stringify(selectedItem, null, 2), 'json'));
+			vats.emitEvent('state-change');
+		} else if (block.name === 'Show in file tree') {
+			this.end({ action: 'open-in-file-tree', path: selectedItem.path });
 		}
 	}
 
