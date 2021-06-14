@@ -220,6 +220,7 @@ export default class FileTreeUI extends BaseUI {
 	}
 
 	async onSelectNode(node) {
+		// TODO: close dialog when sidebar is opened
 		const dialog = this.createDialog(node);
 		dialog.addHeader(node.path);
 		this.unfocus();

@@ -21,7 +21,7 @@ import CodeSearchUI from './CodeSearchUI.js';
 const DIVS = {
 	SIDEBAR_PROMPT: { id: 'sidebar-prompt', top: 0, left: 0, overflowX: 'scroll', width: '{sidebar-prompt}nw' },
 	REPO_NAME: { id: 'repo-name', top: '{sidebar-prompt}b', left: 1, width: '100% - 2' },
-	SIDEBAR: { id: 'sidebar', top: '{sidebar-prompt}t', left: 0, width: 'min(40, 100%)', height: '100%' },
+	SIDEBAR: { id: 'sidebar', top: '{sidebar-prompt}t + 1', left: 0, width: 'min(40, 100%)', height: '100%' },
 	HR: { id: 'hr', top: '{repo-name}b', left: 1, width: '{repo-name}w' },
 	FILE_UI: { id: 'file-ui', top: '{hr}b', left: '{hr}l', width: '{repo-name}w' },
 	COMMITS_UI: { id: 'commits-ui', top: '{hr}b', left: '{hr}l', width: '{repo-name}w' },
@@ -178,6 +178,7 @@ export default class RepoUI extends BaseUI {
 
 	createSidebar() {
 		const sidebarUI = new DialogUI(DIVS.SIDEBAR);
+		sidebarUI.addHeader('Actions');
 		const width = jumper.evaluate('{sidebar}w');
 		const actions = ['Show details', 'Files', 'Branches', 'Commits', 'Issues', 'Code search', 'Repo search'];
 		actions.forEach(string => {

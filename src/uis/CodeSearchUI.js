@@ -105,7 +105,7 @@ export default class CodeSearchUI extends BaseUI {
 		const file = this.getSelectedFile();
 		const hr = new Array(this.preview.width()).fill(chalk.gray('-')).join('');
 		const fragments = selected.item.text_matches.map(match => this.formatFragment(match));
-		this.previewBlock.content(fragments.join(`\n\n${hr}\n${hr}\n\n`));
+		this.previewBlock.content(fragments.map(frag => `${hr}\n${frag}\n${hr}\n`).join('\n'));
 		jumper.render();
 	}
 
@@ -120,7 +120,7 @@ export default class CodeSearchUI extends BaseUI {
 			start = allIndices[i][0];
 			slices.push(fragment.slice(end, start));
 			end = allIndices[i][1];
-			slices.push(chalk.bgYellow(fragment.slice(start, end)));
+			slices.push(chalk.black.bgYellow(fragment.slice(start, end)));
 		}
 		slices.push(fragment.slice(end, fragment.length));
 
